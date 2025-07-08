@@ -1,103 +1,142 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import { useState } from 'react';
+import Link from 'next/link';
+import { Transition } from '@headlessui/react';
+
+const INTEREST_CATEGORIES = ['Backend', 'Database', 'Network', 'Java', 'Spring', 'DevOps', 'Frontend', 'AI/ML'];
+
+export default function LandingPage() {
+  const [email, setEmail] = useState('');
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [showForm, setShowForm] = useState(false);
+  const [subscribed, setSubscribed] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleCategoryToggle = (category: string) => {
+    setSelectedCategories(prev =>
+      prev.includes(category)
+        ? prev.filter(c => c !== category)
+        : [...prev, category]
+    );
+  };
+
+  const handleSubscription = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    if (!email) {
+      setError('이메일을 입력해주세요.');
+      return;
+    }
+    if (selectedCategories.length === 0) {
+      setError('관심 분야를 하나 이상 선택해주세요.');
+      return;
+    }
+
+    console.log(`Subscribing email: ${email} with interests: ${selectedCategories.join(', ')}`);
+    
+    setShowForm(false); // 폼을 숨기고
+    // 구독 완료 메시지를 표시하기 위해 약간의 딜레이 후 subscribed 상태를 true로 변경
+    setTimeout(() => setSubscribed(true), 500); // 500ms는 폼이 사라지는 애니메이션 시간
+  };
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center justify-center p-4 overflow-hidden">
+      <div className="w-full max-w-4xl text-center">
+        <div className="relative" style={{ minHeight: '450px' }}>
+          <Transition
+            as="div"
+            show={!showForm && !subscribed}
+            className="absolute w-full"
+            leave="transition-all duration-500 ease-in-out"
+            leaveFrom="opacity-100 translate-y-0"
+            leaveTo="opacity-0 -translate-y-10"
+          >
+            <div className="flex flex-col items-center">
+              <h1 className="text-5xl md:text-7xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-500 mb-4">
+                AI-Powered Developer Insights
+              </h1>
+              <p className="text-lg md:text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
+                최신 기술 트렌드, 심층 분석, 그리고 커리어 팁까지. AI가 생성하는 고급 개발자 콘텐츠를 가장 먼저 만나보세요.
+              </p>
+              <button
+                onClick={() => setShowForm(true)}
+                className="bg-gradient-to-r from-purple-500 to-cyan-600 hover:from-purple-600 hover:to-cyan-700 text-white font-bold py-4 px-10 rounded-md transition-all duration-300 shadow-lg text-lg"
+              >
+                뉴스레터 구독하기
+              </button>
+            </div>
+          </Transition>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+          <Transition
+            as="div"
+            show={showForm}
+            className="absolute w-full"
+            enter="transition-all duration-500 ease-in-out"
+            enterFrom="opacity-0 translate-y-10"
+            enterTo="opacity-100 translate-y-0"
+            leave="transition-all duration-300 ease-in-out"
+            leaveFrom="opacity-100 translate-y-0"
+            leaveTo="opacity-0 translate-y-10"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            <form onSubmit={handleSubscription} className="max-w-2xl mx-auto bg-gray-800 p-8 rounded-xl shadow-2xl border border-gray-700">
+              <h3 className="text-2xl font-bold text-cyan-400 mb-6">관심 분야를 선택해주세요</h3>
+              <div className="mb-6">
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="your-email@example.com"
+                  className="w-full bg-gray-700 text-white rounded-md px-4 py-3 focus:outline-none focus:ring-2 focus:ring-cyan-500 border border-gray-600"
+                />
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+                {INTEREST_CATEGORIES.map(category => (
+                  <button
+                    type="button"
+                    key={category}
+                    onClick={() => handleCategoryToggle(category)}
+                    className={`p-3 rounded-md text-center font-semibold transition-all duration-200 border-2 ${selectedCategories.includes(category) ? 'bg-cyan-500 border-cyan-500 text-white' : 'bg-gray-700 border-gray-600 hover:border-cyan-500'}`}>
+                    {category}
+                  </button>
+                ))}
+              </div>
+              <button
+                type="submit"
+                className="w-full bg-gradient-to-r from-purple-500 to-cyan-600 hover:from-purple-600 hover:to-cyan-700 text-white font-bold py-3 px-8 rounded-md transition-all duration-300 shadow-lg"
+              >
+                구독 완료
+              </button>
+            </form>
+          </Transition>
+
+          <Transition
+              as="div"
+              show={subscribed}
+              className="absolute w-full"
+              enter="transition-all duration-500 ease-out"
+              enterFrom="opacity-0 scale-95"
+              enterTo="opacity-100 scale-100"
           >
-            Read our docs
-          </a>
+              <div className="bg-green-800 border border-green-600 text-white px-6 py-4 rounded-lg max-w-lg mx-auto">
+                  <p className="font-bold text-lg">구독해주셔서 감사합니다!</p>
+                  <p>관심 분야에 맞는 유용한 정보로 곧 찾아뵙겠습니다.</p>
+              </div>
+          </Transition>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+        {error && <p className="text-red-400 mt-4 max-w-lg mx-auto">{error}</p>}
+
+        <div className="mt-12">
+          <p className="text-gray-400 mb-4">AI 면접 질문 생성기도 사용해보세요.</p>
+          <Link href="/demo">
+            <span className="bg-gray-700 hover:bg-gray-600 text-cyan-400 font-bold py-3 px-8 rounded-md transition-colors duration-300 cursor-pointer">
+              데모 페이지로 이동 &rarr;
+            </span>
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }
