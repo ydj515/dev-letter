@@ -1,3 +1,8 @@
+interface TechLogo {
+  src: string;
+  alt: string;
+}
+
 export const INTEREST_CATEGORIES = [
   "Backend",
   "Database",
@@ -7,9 +12,9 @@ export const INTEREST_CATEGORIES = [
   "DevOps",
   "Frontend",
   "AI/ML"
-];
+] as const;
 
-export const logos = [
+export const logos: TechLogo[] = [
   { src: "/tech-icons/java.svg", alt: "Java" },
   { src: "/tech-icons/kotlin.svg", alt: "Kotlin" },
   { src: "/tech-icons/go.svg", alt: "Go" },

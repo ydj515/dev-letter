@@ -4,9 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "prisma generate && next build",
+    "build": "npm run lint:svg && prisma generate && next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "lint:svg": "svglint \"public/**/*.svg\""
   },
   "dependencies": {
     "@google/genai": "^1.8.0",
@@ -29,6 +30,7 @@
     "eslint": "^9",
     "eslint-config-next": "15.3.4",
     "prisma": "^6.11.1",
+    "svglint": "^4.1.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

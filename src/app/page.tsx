@@ -134,6 +134,7 @@ export default function LandingPage() {
             leaveTo="opacity-0 translate-y-10"
           >
             <form
+              key="subscription-form"
               ref={formRef}
               onSubmit={handleSubscription}
               className="max-w-2xl mx-auto bg-gray-800 p-8 rounded-xl shadow-2xl border border-gray-700"
