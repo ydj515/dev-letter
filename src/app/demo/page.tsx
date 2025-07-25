@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 export default function HomePage() {
-  const [topic, setTopic] = useState("Java/Spring 심층 지식");
+  const [topic, setTopic] = useState("");
   const [questions, setQuestions] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -49,7 +49,7 @@ export default function HomePage() {
             AI 면접 질문 생성기
           </h1>
           <p className="text-gray-400 mt-2">
-            Java/Spring 개발자를 위한 심층 질문을 생성해보세요.
+            궁금한 주제를 입력하고 질문을 생성해보세요.
           </p>
         </header>
 

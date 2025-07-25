@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { Transition } from "@headlessui/react";
 
@@ -21,6 +21,38 @@ export default function LandingPage() {
   const [showForm, setShowForm] = useState(false);
   const [subscribed, setSubscribed] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  const closeModal = () => {
+    setShowForm(false);
+    setSelectedCategories([]);
+    setEmail("");
+    setError(null);
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        closeModal();
+      }
+    };
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (formRef.current && !formRef.current.contains(e.target as Node)) {
+        closeModal();
+      }
+    };
+
+    if (showForm) {
+      document.addEventListener("keydown", handleKeyDown);
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showForm]);
 
   const handleCategoryToggle = (category: string) => {
     setSelectedCategories((prev) =>
@@ -84,7 +116,7 @@ export default function LandingPage() {
           >
             <div className="flex flex-col items-center">
               <h1 className="text-5xl md:text-7xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-500 mb-4">
-                AI-Powered Developer Insights
+                Dev Letter
               </h1>
               <p className="text-lg md:text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
                 최신 기술 트렌드, 심층 분석, 그리고 커리어 팁까지. AI가 생성하는
@@ -111,6 +143,7 @@ export default function LandingPage() {
             leaveTo="opacity-0 translate-y-10"
           >
             <form
+              ref={formRef}
               onSubmit={handleSubscription}
               className="max-w-2xl mx-auto bg-gray-800 p-8 rounded-xl shadow-2xl border border-gray-700"
             >
