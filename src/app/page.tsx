@@ -3,17 +3,8 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { Transition } from "@headlessui/react";
-
-const INTEREST_CATEGORIES = [
-  "Backend",
-  "Database",
-  "Network",
-  "Java",
-  "Spring",
-  "DevOps",
-  "Frontend",
-  "AI/ML"
-];
+import TechCarousel from "@/components/TechCarousel";
+import { INTEREST_CATEGORIES } from "@/constants";
 
 export default function LandingPage() {
   const [email, setEmail] = useState("");
@@ -105,7 +96,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center justify-center p-4 overflow-hidden">
       <div className="w-full max-w-4xl text-center">
-        <div className="relative" style={{ minHeight: "450px" }}>
+        <div className="relative" style={{ minHeight: "300px" }}>
           <Transition
             as="div"
             show={!showForm && !subscribed}
@@ -197,7 +188,11 @@ export default function LandingPage() {
 
         {error && <p className="text-red-400 mt-4 max-w-lg mx-auto">{error}</p>}
 
-        <div className="mt-12">
+        <div className="mt-24 w-full">
+          <TechCarousel />
+        </div>
+
+        <div className="mt-24">
           <p className="text-gray-400 mb-4">
             AI 면접 질문 생성기도 사용해보세요.
           </p>
