@@ -169,6 +169,7 @@ export default function LandingPage() {
               >
                 구독 완료
               </button>
+              {error && <p className="text-red-400 mt-4 text-center">{error}</p>}
             </form>
           </Transition>
 
@@ -187,9 +188,9 @@ export default function LandingPage() {
           </Transition>
         </div>
 
-        {error && <p className="text-red-400 mt-4 max-w-lg mx-auto">{error}</p>}
+        
 
-        <div className="mt-24 w-full">
+        <div className={`mt-24 w-full transition-opacity duration-300 ${showForm ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
           <TechCarousel />
         </div>
 
