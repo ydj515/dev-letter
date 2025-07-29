@@ -45,10 +45,10 @@ export default function HomePage() {
     <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center p-4 sm:p-6 md:p-10">
       <div className="w-full max-w-3xl">
         <header className="text-center mb-8">
-          <h1 className="text-4xl sm:text-5xl font-bold text-cyan-400">
+          <h1 className="text-5xl md:text-7xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-500 mb-4">
             AI 면접 질문 생성기
           </h1>
-          <p className="text-gray-400 mt-2">
+          <p className="text-lg md:text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
             궁금한 주제를 입력하고 질문을 생성해보세요.
           </p>
         </header>
