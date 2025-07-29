@@ -10,7 +10,7 @@ export default function TechBlogs() {
             Tech Blogs
           </h1>
           <p className="text-lg md:text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-            Explore the latest tech blogs.
+            여러가지 테크 기업들의 블로그를 살펴보세요.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-8">
             {techBlogs.map((blog) => (
@@ -21,11 +21,13 @@ export default function TechBlogs() {
               </Link>
             ))}
           </div>
-          <Link href="/">
-            <span className="mt-12 inline-block bg-gray-700 hover:bg-gray-600 text-cyan-400 font-bold py-3 px-8 rounded-md transition-colors duration-300 cursor-pointer">
+          <div className="mt-24">
+            <Link href="/">
+              <p className="text-gray-400 mb-4">
               홈으로 돌아가기 &larr;
-            </span>
-          </Link>
+              </p>
+            </Link>
+          </div>
         </div>
       </div>
     </div>
