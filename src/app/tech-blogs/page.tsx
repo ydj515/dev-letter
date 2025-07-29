@@ -3,7 +3,7 @@ import { techBlogs } from "@/constants";
 
 export default function TechBlogs() {
   return (
-    <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center justify-center p-4 overflow-hidden">
+    <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center p-4 overflow-hidden">
       <div className="w-full max-w-4xl text-center">
         <div className="flex flex-col items-center">
           <h1 className="text-5xl md:text-7xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-500 mb-4">

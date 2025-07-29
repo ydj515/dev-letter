@@ -50,6 +50,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <header className="w-full h-32 px-6 bg-gray-900 flex items-center">
+          {/* 헤더 콘텐츠 나중에 추가 */}
+        </header>
         {children}
       </body>
     </html>
