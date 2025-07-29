@@ -195,13 +195,15 @@ export default function LandingPage() {
         </div>
 
         <div className="mt-24">
-          <p className="text-gray-400 mb-4">
-            AI 면접 질문 생성기도 사용해보세요.
-          </p>
+          <Link href="/tech-blogs">
+            <p className="text-gray-400 mb-4">
+            테크블로그들을 살표보세요. <span aria-hidden="true">→</span>
+            </p>
+          </Link>
           <Link href="/demo">
-            <span className="bg-gray-700 hover:bg-gray-600 text-cyan-400 font-bold py-3 px-8 rounded-md transition-colors duration-300 cursor-pointer">
-              데모 페이지로 이동 &rarr;
-            </span>
+            <p className="text-gray-400 mb-4">
+            AI 면접 질문 생성기도 사용해보세요. <span aria-hidden="true">→</span>
+            </p>
           </Link>
         </div>
       </div>

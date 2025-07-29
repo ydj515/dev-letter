@@ -32,3 +32,11 @@ export const logos: TechLogo[] = [
   { src: "/tech-icons/docker.svg", alt: "Docker" },
   { src: "/tech-icons/kubernetes.svg", alt: "Kubernetes" }
 ];
+
+export const techBlogs = [
+  { name: '우아한형제들', url: 'https://techblog.woowahan.com/' },
+  { name: '쿠팡', url: 'https://medium.com/coupang-engineering/kr/home' },
+  { name: '당근마켓', url: 'https://medium.com/daangn' },
+  { name: '토스', url: 'https://toss.tech/' },
+  { name: '카카오', url: 'https://tech.kakao.com/' },
+];
