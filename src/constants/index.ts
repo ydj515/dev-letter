@@ -11,7 +11,7 @@ export const INTEREST_CATEGORIES = [
   "Spring",
   "DevOps",
   "Frontend",
-  "AI/ML"
+  "AI/ML",
 ] as const;
 
 export const logos: TechLogo[] = [
@@ -30,13 +30,13 @@ export const logos: TechLogo[] = [
   { src: "/tech-icons/mongodb.svg", alt: "MongoDB" },
   { src: "/tech-icons/prometheus.svg", alt: "Prometheus" },
   { src: "/tech-icons/docker.svg", alt: "Docker" },
-  { src: "/tech-icons/kubernetes.svg", alt: "Kubernetes" }
+  { src: "/tech-icons/kubernetes.svg", alt: "Kubernetes" },
 ];
 
 export const techBlogs = [
-  { name: '우아한형제들', url: 'https://techblog.woowahan.com/' },
-  { name: '쿠팡', url: 'https://medium.com/coupang-engineering/kr/home' },
-  { name: '당근마켓', url: 'https://medium.com/daangn' },
-  { name: '토스', url: 'https://toss.tech/' },
-  { name: '카카오', url: 'https://tech.kakao.com/' },
+  { name: "우아한형제들", url: "https://techblog.woowahan.com/" },
+  { name: "쿠팡", url: "https://medium.com/coupang-engineering/kr/home" },
+  { name: "당근마켓", url: "https://medium.com/daangn" },
+  { name: "토스", url: "https://toss.tech/" },
+  { name: "카카오", url: "https://tech.kakao.com/" },
 ];

@@ -23,9 +23,7 @@ export default function TechBlogs() {
           </div>
           <div className="mt-24">
             <Link href="/">
-              <p className="text-gray-400 mb-4">
-              홈으로 돌아가기 &larr;
-              </p>
+              <p className="text-gray-400 mb-4">홈으로 돌아가기 &larr;</p>
             </Link>
           </div>
         </div>

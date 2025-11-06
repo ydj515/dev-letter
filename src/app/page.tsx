@@ -47,9 +47,7 @@ export default function LandingPage() {
 
   const handleCategoryToggle = (category: string) => {
     setSelectedCategories((prev) =>
-      prev.includes(category)
-        ? prev.filter((c) => c !== category)
-        : [...prev, category]
+      prev.includes(category) ? prev.filter((c) => c !== category) : [...prev, category],
     );
   };
 
@@ -70,9 +68,9 @@ export default function LandingPage() {
       const response = await fetch("/api/subscribe", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email, interests: selectedCategories })
+        body: JSON.stringify({ email, interests: selectedCategories }),
       });
 
       if (!response.ok) {
@@ -110,8 +108,8 @@ export default function LandingPage() {
                 Dev Letter
               </h1>
               <p className="text-lg md:text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-                최신 기술 트렌드, 심층 분석, 그리고 커리어 팁까지. AI가 생성하는
-                고급 개발자 콘텐츠를 가장 먼저 만나보세요.
+                최신 기술 트렌드, 심층 분석, 그리고 커리어 팁까지. AI가 생성하는 고급 개발자
+                콘텐츠를 가장 먼저 만나보세요.
               </p>
               <button
                 onClick={() => setShowForm(true)}
@@ -139,9 +137,7 @@ export default function LandingPage() {
               onSubmit={handleSubscription}
               className="max-w-2xl mx-auto bg-gray-800 p-8 rounded-xl shadow-2xl border border-gray-700"
             >
-              <h3 className="text-2xl font-bold text-cyan-400 mb-6">
-                관심 분야를 선택해주세요
-              </h3>
+              <h3 className="text-2xl font-bold text-cyan-400 mb-6">관심 분야를 선택해주세요</h3>
               <div className="mb-6">
                 <input
                   type="email"
@@ -188,21 +184,21 @@ export default function LandingPage() {
           </Transition>
         </div>
 
-        
-
-        <div className={`mt-24 w-full transition-opacity duration-300 ${showForm ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+        <div
+          className={`mt-24 w-full transition-opacity duration-300 ${showForm ? "opacity-0 pointer-events-none" : "opacity-100"}`}
+        >
           <TechCarousel />
         </div>
 
         <div className="mt-24">
           <Link href="/tech-blogs">
             <p className="text-gray-400 mb-4">
-            테크블로그들을 살표보세요. <span aria-hidden="true">→</span>
+              테크블로그들을 살표보세요. <span aria-hidden="true">→</span>
             </p>
           </Link>
           <Link href="/demo">
             <p className="text-gray-400 mb-4">
-            AI 면접 질문 생성기도 사용해보세요. <span aria-hidden="true">→</span>
+              AI 면접 질문 생성기도 사용해보세요. <span aria-hidden="true">→</span>
             </p>
           </Link>
         </div>

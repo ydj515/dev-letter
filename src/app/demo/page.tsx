@@ -17,9 +17,9 @@ export default function HomePage() {
       const response = await fetch("/api/generate-questions", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ topic })
+        body: JSON.stringify({ topic }),
       });
 
       if (!response.ok) {
@@ -84,18 +84,11 @@ export default function HomePage() {
 
         {questions.length > 0 && (
           <div className="bg-gray-800 rounded-lg shadow-lg p-6">
-            <h2 className="text-2xl font-semibold mb-4 text-cyan-400">
-              생성된 질문
-            </h2>
+            <h2 className="text-2xl font-semibold mb-4 text-cyan-400">생성된 질문</h2>
             <ul className="space-y-4">
               {questions.map((q, index) => (
-                <li
-                  key={index}
-                  className="bg-gray-700 p-4 rounded-md flex items-start"
-                >
-                  <span className="text-cyan-400 font-bold mr-3">
-                    Q{index + 1}.
-                  </span>
+                <li key={index} className="bg-gray-700 p-4 rounded-md flex items-start">
+                  <span className="text-cyan-400 font-bold mr-3">Q{index + 1}.</span>
                   <p className="flex-1">{q}</p>
                 </li>
               ))}

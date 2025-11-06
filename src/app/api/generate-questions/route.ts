@@ -43,15 +43,12 @@ export async function POST(req: NextRequest) {
       "Spring Framework의 핵심 원리인 IoC와 DI에 대해 설명하고, 실제 프로젝트에서 어떻게 활용되는지 예를 들어 설명하시오.",
       "MSA(Microservices Architecture)의 장단점을 설명하고, MSA 전환 시 고려해야 할 사항들을 나열하시오.",
       "JPA(Java Persistence API)의 영속성 컨텍스트에 대해 설명하고, 1차 캐시, 쓰기 지연, 변경 감지, 지연 로딩의 동작 방식을 설명하시오.",
-      "데이터베이스 트랜잭션의 ACID 속성에 대해 설명하고, 격리 수준(Isolation Level)에 따른 문제점과 해결 방안을 설명하시오."
+      "데이터베이스 트랜잭션의 ACID 속성에 대해 설명하고, 격리 수준(Isolation Level)에 따른 문제점과 해결 방안을 설명하시오.",
     ];
 
     return NextResponse.json(staticQuestions);
   } catch (error) {
     console.error("Error generating questions:", error);
-    return NextResponse.json(
-      { error: "Failed to generate questions" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to generate questions" }, { status: 500 });
   }
 }
