@@ -10,9 +10,70 @@ datasource db {
   url       = env("PRISMA_DATABASE_URL")
 }
 
+enum InterestCategory {
+  Backend
+  Database
+  Network
+  Java
+  Spring
+  DevOps
+  Frontend
+  AI_ML @map("AI/ML")
+}
+
+enum IssueStatus {
+  DRAFT
+  SCHEDULED
+  SENT
+}
+
+enum DeliveryStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
 model Subscriber {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  interests String[]
-  createdAt DateTime @default(now())
+  id                String           @id @default(cuid())
+  email             String           @unique
+  interests         String[]
+  createdAt         DateTime         @default(now())
+  lastSentAt        DateTime?
+  preferredSendTime String?
+  deliveries        IssueDelivery[]
+}
+
+model NewsletterIssue {
+  id           String         @id @default(cuid())
+  category     InterestCategory
+  title        String
+  questions    String[]
+  generatedAt  DateTime       @default(now())
+  publishDate  DateTime       @default(now())
+  scheduledFor DateTime?
+  sentAt       DateTime?
+  status       IssueStatus    @default(DRAFT)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  deliveries IssueDelivery[]
+
+  @@unique([category, publishDate])
+}
+
+model IssueDelivery {
+  id            String         @id @default(cuid())
+  issueId       String
+  subscriberId  String
+  status        DeliveryStatus @default(PENDING)
+  error         String?
+  sentAt        DateTime?
+  createdAt     DateTime       @default(now())
+
+  issue       NewsletterIssue @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  subscriber  Subscriber      @relation(fields: [subscriberId], references: [id], onDelete: Cascade)
+
+  @@index([issueId])
+  @@index([subscriberId])
+  @@unique([issueId, subscriberId])
 }

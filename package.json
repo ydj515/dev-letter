@@ -7,7 +7,9 @@
     "build": "npm run lint:svg && prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
-    "lint:svg": "svglint \"public/**/*.svg\""
+    "lint:svg": "svglint \"public/**/*.svg\"",
+    "analyze:subs": "node scripts/analyze-subscribers.mjs",
+    "seed:newsletter": "node scripts/seed-newsletter.mjs"
   },
   "dependencies": {
     "@google/genai": "^1.8.0",
