@@ -42,9 +42,19 @@ export async function POST(req: NextRequest) {
     const resend = new Resend(process.env.RESEND_API_KEY);
     const emailHtml = await render(SubscriptionConfirmation({ email, interests }));
 
+    const senderEmail = process.env.RESEND_FROM_EMAIL;
+
+    if (!senderEmail) {
+      console.warn("RESEND_FROM_EMAIL is not set. Confirmation email will not be sent.");
+    }
+
     try {
+      if (!senderEmail) {
+        throw new Error("Missing RESEND_FROM_EMAIL");
+      }
+
       await resend.emails.send({
-        from: "onboarding@resend.dev", // Resend에서 제공하는 기본 발신 이메일
+        from: senderEmail,
         to: email,
         subject: "AI-Powered Developer Insights 뉴스레터 구독 확인",
         html: emailHtml,
