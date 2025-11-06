@@ -49,7 +49,7 @@ model NewsletterIssue {
   title        String
   questions    String[]
   generatedAt  DateTime       @default(now())
-  publishDate  DateTime       @default(now())
+  publishDate  DateTime
   scheduledFor DateTime?
   sentAt       DateTime?
   status       IssueStatus    @default(DRAFT)
