@@ -54,10 +54,12 @@ npm install
 DATABASE_URL="postgres://user:password@host:5432/dbname"
 PRISMA_DATABASE_URL="postgres://user:password@host:5432/dbname"
 RESEND_API_KEY="your_resend_api_key"
+RESEND_FROM_EMAIL="onboarding@your-domain.com"
 GEMINI_API_KEY="your_google_gemini_api_key"
 ```
 
 - `RESEND_API_KEY`는 구독 확인 메일 발송에 사용합니다.
+- `RESEND_FROM_EMAIL`은 Resend에서 인증한 발신 주소를 설정합니다(샌드박스 기본값은 `onboarding@resend.dev`).
 - `GEMINI_API_KEY`는 `/api/user-input`과 실제 질문 생성 로직에 사용합니다. 키가 없으면 질문 생성기는 샘플 데이터를 반환합니다.
 
 ### 4. 데이터베이스 마이그레이션
