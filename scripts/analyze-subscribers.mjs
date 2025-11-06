@@ -1,19 +1,8 @@
 #!/usr/bin/env node
 import { PrismaClient } from "@prisma/client";
+import interestCategories from "../src/constants/interest-categories.json" assert { type: "json" };
 
 const prisma = new PrismaClient();
-
-// Keep this list in sync with src/constants/index.ts
-const CATEGORIES = [
-  "Backend",
-  "Database",
-  "Network",
-  "Java",
-  "Spring",
-  "DevOps",
-  "Frontend",
-  "AI/ML",
-];
 
 function increment(map, key) {
   map.set(key, (map.get(key) || 0) + 1);
@@ -27,7 +16,7 @@ async function main() {
   const subscribers = await prisma.subscriber.findMany();
   const total = subscribers.length;
 
-  const categoryCounts = new Map(CATEGORIES.map((cat) => [cat, 0]));
+  const categoryCounts = new Map(interestCategories.map((category) => [category, 0]));
   const invalidInterests = new Map();
   const comboCounts = new Map();
   let emptyInterestCount = 0;
@@ -43,9 +32,9 @@ async function main() {
     const seenForSubscriber = new Set();
 
     for (const interest of interests) {
-      if (CATEGORIES.includes(interest)) {
+      if (interestCategories.includes(interest)) {
         if (!seenForSubscriber.has(interest)) {
-          categoryCounts.set(interest, (categoryCounts.get(interest) || 0) + 1);
+          increment(categoryCounts, interest);
           seenForSubscriber.add(interest);
         }
       } else {

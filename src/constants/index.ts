@@ -1,18 +1,11 @@
+import interestCategories from "./interest-categories.json";
+
 interface TechLogo {
   src: string;
   alt: string;
 }
 
-export const INTEREST_CATEGORIES = [
-  "Backend",
-  "Database",
-  "Network",
-  "Java",
-  "Spring",
-  "DevOps",
-  "Frontend",
-  "AI/ML",
-] as const;
+export const INTEREST_CATEGORIES = interestCategories;
 
 export const logos: TechLogo[] = [
   { src: "/tech-icons/java.svg", alt: "Java" },

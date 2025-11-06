@@ -1,18 +1,24 @@
 #!/usr/bin/env node
 import { PrismaClient, InterestCategory, DeliveryStatus, IssueStatus } from "@prisma/client";
+import interestCategories from "../src/constants/interest-categories.json" assert { type: "json" };
 
 const prisma = new PrismaClient();
 
-const CATEGORY_CONFIG = [
-  { label: "Backend", value: InterestCategory.Backend },
-  { label: "Database", value: InterestCategory.Database },
-  { label: "Network", value: InterestCategory.Network },
-  { label: "Java", value: InterestCategory.Java },
-  { label: "Spring", value: InterestCategory.Spring },
-  { label: "DevOps", value: InterestCategory.DevOps },
-  { label: "Frontend", value: InterestCategory.Frontend },
-  { label: "AI/ML", value: InterestCategory.AI_ML },
-];
+const toInterestCategoryValue = (label) => {
+  const enumKey = label.replace(/\W+/g, "_");
+  const value = InterestCategory[enumKey];
+
+  if (!value) {
+    throw new Error(`Unknown interest category label "${label}"`);
+  }
+
+  return value;
+};
+
+const CATEGORY_CONFIG = interestCategories.map((label) => ({
+  label,
+  value: toInterestCategoryValue(label),
+}));
 
 const SAMPLE_QUESTIONS = (category) => [
   `${category} 관련 아키텍처 의사결정에서 최근에 가장 어려웠던 사례를 설명해 주세요.`,
@@ -29,9 +35,9 @@ function startOfDay(date = new Date()) {
 }
 
 async function main() {
-  const subscribers = await prisma.subscriber.findMany();
   const publishDate = startOfDay();
   const summary = [];
+  const subscriberIdsToUpdate = new Set();
 
   for (const { label, value } of CATEGORY_CONFIG) {
     const issue = await prisma.newsletterIssue.upsert({
@@ -53,39 +59,51 @@ async function main() {
       },
     });
 
-    let deliveryCount = 0;
-
-    for (const subscriber of subscribers) {
-      if (!subscriber.interests?.includes(label)) {
-        continue;
-      }
-
-      await prisma.issueDelivery.upsert({
-        where: {
-          issueId_subscriberId: {
-            issueId: issue.id,
-            subscriberId: subscriber.id,
-          },
+    const interestedSubscribers = await prisma.subscriber.findMany({
+      where: {
+        interests: {
+          has: label,
         },
-        update: {},
-        create: {
-          issueId: issue.id,
-          subscriberId: subscriber.id,
-          status: DeliveryStatus.PENDING,
-        },
+      },
+      select: {
+        id: true,
+        lastSentAt: true,
+      },
+    });
+
+    if (interestedSubscribers.length > 0) {
+      const deliveriesToCreate = interestedSubscribers.map(({ id }) => ({
+        issueId: issue.id,
+        subscriberId: id,
+        status: DeliveryStatus.PENDING,
+      }));
+
+      await prisma.issueDelivery.createMany({
+        data: deliveriesToCreate,
+        skipDuplicates: true,
       });
 
-      deliveryCount += 1;
-
-      if (!subscriber.lastSentAt || subscriber.lastSentAt < publishDate) {
-        await prisma.subscriber.update({
-          where: { id: subscriber.id },
-          data: { lastSentAt: publishDate },
-        });
+      for (const subscriber of interestedSubscribers) {
+        if (!subscriber.lastSentAt || subscriber.lastSentAt < publishDate) {
+          subscriberIdsToUpdate.add(subscriber.id);
+        }
       }
     }
 
-    summary.push({ category: label, deliveries: deliveryCount });
+    summary.push({ category: label, deliveries: interestedSubscribers.length });
+  }
+
+  if (subscriberIdsToUpdate.size > 0) {
+    await prisma.subscriber.updateMany({
+      where: {
+        id: {
+          in: Array.from(subscriberIdsToUpdate),
+        },
+      },
+      data: {
+        lastSentAt: publishDate,
+      },
+    });
   }
 
   console.log("Seed completed for publishDate:", publishDate.toISOString());
