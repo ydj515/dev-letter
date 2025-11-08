@@ -15,6 +15,8 @@ export type IssueCreationSource = "existing" | "ai" | "fallback";
 
 type NewsletterIssueRepository = Pick<PrismaClient, "newsletterIssue">;
 
+const ESTIMATED_TOKENS_PER_QA_PAIR = 120;
+
 export interface CreateNewsletterIssueOptions {
   category: InterestCategory;
   publishDate?: Date;
@@ -58,7 +60,7 @@ export async function createNewsletterIssue(
   try {
     const aiResult = await aiClient.generateText(prompt, {
       temperature: template.temperature,
-      maxOutputTokens: template.questionCount * 120,
+      maxOutputTokens: template.questionCount * ESTIMATED_TOKENS_PER_QA_PAIR,
       metadata: {
         category,
         publishDate: publishDate.toISOString(),
