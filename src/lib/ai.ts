@@ -25,8 +25,14 @@ export interface AiClient {
 }
 
 const DEFAULT_MODEL = process.env.GEMINI_MODEL ?? "gemini-2.0-flash";
-const INPUT_PRICE_PER_TOKEN = 0.35 / 1_000_000; // Gemini 2.0 Flash 기준
-const OUTPUT_PRICE_PER_TOKEN = 1.05 / 1_000_000;
+const MODEL_PRICING = {
+  "gemini-2.0-flash": {
+    input: 0.35 / 1_000_000,
+    output: 1.05 / 1_000_000,
+  },
+} as const;
+const MODEL_PRICING_FALLBACK = MODEL_PRICING["gemini-2.0-flash"];
+const PRICING = MODEL_PRICING[DEFAULT_MODEL as keyof typeof MODEL_PRICING] ?? MODEL_PRICING_FALLBACK;
 
 export class GeminiClient implements AiClient {
   private model: GenerativeModel | null = null;
@@ -102,7 +108,7 @@ function mapUsage(usage: UsageMetadata | null | undefined, latencyMs: number): A
   const inputTokens = usage.promptTokenCount ?? 0;
   const outputTokens = usage.candidatesTokenCount ?? 0;
   const totalTokens = usage.totalTokenCount ?? inputTokens + outputTokens;
-  const costUsd = inputTokens * INPUT_PRICE_PER_TOKEN + outputTokens * OUTPUT_PRICE_PER_TOKEN;
+  const costUsd = inputTokens * PRICING.input + outputTokens * PRICING.output;
 
   return {
     inputTokens,
