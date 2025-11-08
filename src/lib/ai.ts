@@ -90,7 +90,13 @@ export class GeminiClient implements AiClient {
   }
 }
 
-function mapUsage(usage: any, latencyMs: number): AiUsage | undefined {
+type UsageMetadata = {
+  promptTokenCount?: number;
+  candidatesTokenCount?: number;
+  totalTokenCount?: number;
+};
+
+function mapUsage(usage: UsageMetadata | null | undefined, latencyMs: number): AiUsage | undefined {
   if (!usage) return undefined;
 
   const inputTokens = usage.promptTokenCount ?? 0;
@@ -115,14 +121,20 @@ function logUsage(usage: AiUsage | undefined, metadata?: Record<string, unknown>
   );
 }
 
+type HttpError = Error & { status?: number };
+
 function isRetryable(error: unknown) {
   if (!(error instanceof Error)) return false;
-  if ("status" in error && typeof (error as any).status === "number") {
-    const status = (error as any).status as number;
+  if (hasHttpStatus(error)) {
+    const status = error.status as number;
     return status >= 500 || status === 429;
   }
   const message = error.message ?? "";
   return /timeout|unavailable|aborted|fetch failed/i.test(message);
+}
+
+function hasHttpStatus(error: Error | HttpError): error is HttpError {
+  return typeof (error as HttpError).status === "number";
 }
 
 async function runWithTimeout<T>(fn: () => Promise<T>, timeoutMs: number) {
