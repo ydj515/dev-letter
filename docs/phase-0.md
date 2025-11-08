@@ -50,11 +50,11 @@
 
   ```
   You are an expert technical interviewer specialising in {{category}}.
-  Generate 5 senior-level interview questions in Korean.
-  Each question should:
+  Generate 5 senior-level interview question & model-answer pairs in Korean.
+  Each pair should:
   - Focus on practical architecture/trade-offs/incident response.
   - Avoid trivia-style questions or simple definitions.
-  Return a JSON array of strings (UTF-8).
+  Return a JSON array of {"question": string, "answer": string}.
   ```
 
 - 카테고리별 컨텍스트는 `INTEREST_CATEGORIES` 값을 기준으로 조건 분기하거나 사전 매핑을 준비합니다(예: Backend → 분산 시스템, AI/ML → 모델 운영).

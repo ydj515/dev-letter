@@ -9,10 +9,10 @@
     "lint": "next lint",
     "lint:svg": "svglint \"public/**/*.svg\"",
     "analyze:subs": "node scripts/analyze-subscribers.mjs",
-    "seed:newsletter": "node scripts/seed-newsletter.mjs"
+    "seed:newsletter": "node scripts/seed-newsletter.mjs",
+    "test:newsletter": "tsc -p tsconfig.test.json && node --test .tmp/tests/tests"
   },
   "dependencies": {
-    "@google/genai": "^1.8.0",
     "@google/generative-ai": "^0.24.1",
     "@headlessui/react": "^2.2.4",
     "@prisma/client": "^6.11.1",

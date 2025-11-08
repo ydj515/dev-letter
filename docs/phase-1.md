@@ -33,7 +33,7 @@ Represents a generated/scheduled newsletter entry for a specific category and da
 
 - `category` uses `InterestCategory` enum to keep parity with `INTEREST_CATEGORIES`.
 - `publishDate` stores the logical issue date (start-of-day) and is unique per category to prevent duplicate daily issues.
-- `questions` keeps the rendered AI 질문 배열.
+- `qaPairs` keeps the rendered AI 질문+답변 JSON 배열.
 - `status`, `scheduledFor`, `sentAt` enable scheduling state tracking.
 
 ### IssueDelivery
@@ -53,8 +53,8 @@ Tracks the delivery lifecycle per subscriber.
 ## Migration
 
 - Added SQL migration `20250801120000_phase1_newsletter`.
-- Creates enums, tables, indexes, and alters `Subscriber`.
-- Apply with `npx prisma migrate deploy` (CI) or `npx prisma migrate dev --name phase1_newsletter`.
+- Added follow-up migration `20250204103000_phase2_qa_pairs` to backfill `qaPairs` and drop the legacy `questions` column.
+- Apply with `npx prisma migrate deploy` (CI) or `npx prisma migrate dev --name phase2_qa_pairs`.
 
 ## Seed script
 
@@ -62,7 +62,7 @@ Tracks the delivery lifecycle per subscriber.
 npm run seed:newsletter
 ```
 
-- Generates one `NewsletterIssue` per category for the current day (draft 상태).
+- Generates one `NewsletterIssue` per category for the current day (draft 상태) with 기본 QA 세트.
 - Creates `IssueDelivery` stubs for subscribers whose `interests` contain the category.
 - Updates `lastSentAt` when a subscriber is associated for the first time.
 

@@ -47,7 +47,7 @@ model NewsletterIssue {
   id           String         @id @default(cuid())
   category     InterestCategory
   title        String
-  questions    String[]
+  qaPairs      Json           @db.JsonB
   generatedAt  DateTime       @default(now())
   publishDate  DateTime
   scheduledFor DateTime?
