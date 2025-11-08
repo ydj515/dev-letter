@@ -67,6 +67,7 @@ GEMINI_API_KEY="your_google_gemini_api_key"
 ```bash
 npx prisma migrate dev --name init
 npx prisma generate
+npx prisma migrate deploy # 새 마이그레이션 "생성"은 금지, "적용만" 합니다.
 ```
 
 필요하다면 샘플 뉴스레터 데이터를 추가해 새 스키마 구조를 확인합니다.
