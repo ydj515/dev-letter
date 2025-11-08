@@ -82,10 +82,9 @@ function parseJsonPairs(raw: string) {
         }
 
         if (typeof entry === "object") {
-          const question =
-            getString(entry, ["question", "q", "질문"]) ??
-            JSON.stringify(entry);
+          const question = getString(entry, ["question", "q", "질문"]);
           const answer = getString(entry, ["answer", "a", "답변"]) ?? "";
+          if (!question) return null;
           return { question, answer };
         }
 
