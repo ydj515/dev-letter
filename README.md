@@ -8,6 +8,114 @@ Dev Letter는 AI가 생성하는 개발자용 뉴스레터와 인터랙티브 �
 - **AI 면접 질문 생성기**: 입력한 주제를 기반으로 질문을 생성하는 데모 페이지(`/demo`)를 제공합니다. 실제 Gemini API 연동 코드는 준비되어 있으며 현재는 샘플 데이터를 반환합니다.
 - **테크 블로그 모음**: `/tech-blogs`에서 주요 IT 기업 블로그 링크를 빠르게 확인할 수 있습니다.
 - **기술 스택 캐러셀**: Tailwind CSS로 구현된 무한 캐러셀에서 프로젝트에서 활용한 기술 스택을 시각화합니다.
+- **관리자 콘솔**: `/admin` 페이지에서 발행 이슈를 미리보고 승인·재발송·즉시 생성, Slack 알림과 메트릭 확인까지 한 번에 처리합니다.
+
+## 전체 아키텍처
+
+```mermaid
+%%{init: {"flowchart": {"curve": "basis", "nodeSpacing": 40, "rankSpacing": 60}}}%%
+flowchart LR
+    subgraph Client
+      U[Landing /admin UI]
+    end
+
+    subgraph AppRouter["Next.js App Router"]
+      API1[/api/subscribe/]
+      API2[/api/cron/newsletter/]
+      API3[/api/unsubscribe/]
+      Admin[/admin actions/]
+    end
+
+    subgraph Services
+      Cron[Newsletter Cron<br/>scheduler]
+      IssueSvc[newsletter-issue.ts<br/>AI+fallback]
+      DeliverySvc[newsletter-delivery.ts<br/>Resend batch]
+      Metrics[issue-metrics.ts]
+    end
+
+    subgraph External
+      DB[(PostgreSQL/Prisma)]
+      Resend[(Resend)]
+      Gemini[(Google Gemini 2.x)]
+      Slack[(Slack Webhook)]
+      Email[구독자]
+    end
+
+    U -->|구독 요청| API1
+    API1 --> DB
+    API2 --> Cron
+    Cron --> IssueSvc --> Gemini
+    IssueSvc --> DB
+    Cron --> DeliverySvc --> Resend --> Email
+    DeliverySvc --> DB
+    DeliverySvc --> Metrics --> DB
+    DeliverySvc -. "실패 알림" .-> Slack
+    Admin --> Cron
+    Admin --> DeliverySvc
+    API3 --> DB
+```
+
+### 발행 플로우
+
+1. **카테고리 스케줄링**: `newsletter-cron.ts`가 회전 규칙을 계산하여 오늘의 카테고리와 발행일을 결정합니다.
+2. **콘텐츠 생성**: `newsletter-issue.ts`가 선택된 카테고리를 바탕으로 프롬프트를 만들고 Gemini 2.x Flash 모델에 요청합니다.  
+   - 응답이 JSON 형식으로 들어오면 `normalizeQaPairs`로 정규화하여 `NewsletterIssue.qaPairs`에 저장합니다.  
+   - 실패하거나 파싱할 수 없는 경우 `buildFallbackQaPairs`가 준비한 고품질 Q/A 템플릿을 채웁니다.
+3. **발송 큐 구성**: `ensureDeliveriesForIssue`가 관심사가 일치하고 아직 보내지 않은 구독자를 찾아 `IssueDelivery`를 생성하고, 이슈 상태를 `SCHEDULED`로 변경합니다.
+4. **배치 발송**: `newsletter-delivery.ts`의 `sendNewsletterIssue`가 React Email 템플릿을 렌더링하여 Resend `batch.send`로 전송합니다.  
+   - 구독 해지를 요청한 사용자는 `FAILED` 처리합니다.  
+   - 재시도 한도까지 실패하면 에러 메시지를 `IssueDelivery.error`에 저장합니다.  
+   - 발송 후 `IssueMetric`을 업데이트하여 `/admin`에서 성공률/실패 건수를 즉시 확인할 수 있습니다.
+5. **관측성**: 발송 실패·Cron 예외·Disabled 상황은 `src/lib/alerts.ts`를 통해 Slack Webhook으로 전달됩니다.
+
+### 관리자 콘솔 플로우
+
+- `/admin/login`에서 단일 운영 계정으로 기본 인증 후 접속합니다(쿠키 기반 세션).
+- 대시보드에서는
+  - 최신 이슈 카드: QA 미리보기·대상자 수·성공률·상태 표시
+  - “즉시 생성” 폼: 카테고리/발행일을 선택해 AI 생성 파이프라인을 바로 실행
+  - 승인/재발송 버튼: `ensureDeliveriesForIssue`/`sendNewsletterIssue`를 온디맨드로 호출
+  - 감사 로그: 모든 액션(`approve_issue`, `resend_issue`, `generate_issue`)을 `AdminActionLog`에 JSON 메타데이터와 함께 기록
+- 재발송 시에는 실패한 딜리버리(`FAILED`)도 자동으로 큐에 되돌려 재전송합니다.
+
+### 시퀀스 다이어그램
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Cron as Cron Scheduler
+    participant IssueSvc as newsletter-issue.ts
+    participant Gemini as Gemini API
+    participant DB as Prisma/Postgres
+    participant Delivery as newsletter-delivery.ts
+    participant Resend as Resend API
+    participant Slack as Alerts
+
+    Cron->>DB: 미발송 이슈 조회 / 구독자 필터링
+    Cron->>IssueSvc: createNewsletterIssue(category, publishDate)
+    IssueSvc->>Gemini: generateContent(prompt)
+    Gemini-->>IssueSvc: QA JSON / 텍스트
+    IssueSvc->>DB: NewsletterIssue 저장
+    Cron->>Delivery: sendNewsletterIssue(issueId)
+    loop Batch
+        Delivery->>DB: PENDING IssueDelivery 조회
+        Delivery->>Resend: batch.send(payload)
+        alt 성공
+            Delivery->>DB: IssueDelivery SENT 업데이트
+        else 실패/재시도
+            Delivery->>DB: FAILED + error 저장
+        end
+    end
+    Delivery->>DB: IssueMetric upsert
+    Delivery-->>Slack: 실패 알림 (필요 시)
+```
+
+### 운영 모드 플로우 예시
+
+1. **구독자 증가**: `/api/subscribe`가 이메일+관심사를 Prisma에 저장하고 Resend 확인 메일을 전송합니다.
+2. **매일 자정 Cron**: Vercel Cron(또는 자체 워커)이 `POST /api/cron/newsletter`를 호출해 자동 발행 파이프라인을 실행합니다.
+3. **문제 감지**: Resend 오류나 Cron 예외는 Slack Webhook으로 알림이 오며, `/admin` 대시보드에서 실패 건수를 즉시 확인할 수 있습니다.
+4. **운영자 개입**: `/admin`에서 즉시 콘텐츠 생성 → 승인 → 재발송을 수동으로 트리거할 수 있습니다. 모든 액션은 `AdminActionLog`에 기록되어 감사 추적이 가능합니다.
 
 ## 기술 스택
 
