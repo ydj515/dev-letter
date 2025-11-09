@@ -23,7 +23,17 @@ export async function POST(req: NextRequest) {
     });
 
     if (existingSubscriber) {
-      // Optionally, you could update their interests instead of throwing an error
+      if (existingSubscriber.unsubscribedAt) {
+        const reactivated = await prisma.subscriber.update({
+          where: { email },
+          data: {
+            interests,
+            unsubscribedAt: null,
+          },
+        });
+        return NextResponse.json(reactivated, { status: 200 });
+      }
+
       return NextResponse.json(
         { error: "This email is already subscribed." },
         { status: 409 }, // 409 Conflict

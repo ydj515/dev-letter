@@ -12,6 +12,11 @@ import { getDailyCategorySchedule, type DailyCategorySchedule } from "../lib/cat
 import { prisma as defaultPrisma } from "../lib/prisma";
 import { startOfDay } from "../lib/utils";
 import { createNewsletterIssue, type IssueCreationSource } from "./newsletter-issue";
+import {
+  sendNewsletterIssue,
+  type BatchEmailClient,
+  type SendNewsletterIssueResult,
+} from "./newsletter-delivery";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const DEFAULT_BACKLOG_WINDOW_DAYS = 3;
@@ -23,6 +28,14 @@ export interface RunNewsletterCronOptions {
   aiClient?: AiClient;
   cycleStartDate?: Date;
   backlogWindowDays?: number;
+  delivery?: DeliveryOptions;
+}
+
+interface DeliveryOptions {
+  batchSize?: number;
+  maxAttempts?: number;
+  baseUrl?: string;
+  emailClient?: BatchEmailClient;
 }
 
 export interface NewsletterCronResult {
@@ -32,9 +45,11 @@ export interface NewsletterCronResult {
     category: InterestCategory;
     publishDate: string;
     status: IssueStatus;
+    sentAt: string | null;
     source: IssueCreationSource;
   };
   deliveries: DeliverySummary;
+  send: SendNewsletterIssueResult;
   backlog: BacklogSummary;
 }
 
@@ -65,6 +80,7 @@ interface BacklogIssueSummary {
   publishDate: string;
   deliveriesCreated: number;
   subscribersMatched: number;
+  send: SendNewsletterIssueResult;
 }
 
 export async function runNewsletterCron(
@@ -78,7 +94,13 @@ export async function runNewsletterCron(
   const backlogWindowDays = options.backlogWindowDays ?? DEFAULT_BACKLOG_WINDOW_DAYS;
   const scheduledAt = new Date();
 
-  const backlog = await processBacklogIssues(prisma, schedule.publishDate, scheduledAt, backlogWindowDays);
+  const backlog = await processBacklogIssues(
+    prisma,
+    schedule.publishDate,
+    scheduledAt,
+    backlogWindowDays,
+    options.delivery,
+  );
 
   const { issue, source } = await createNewsletterIssue({
     category: schedule.category,
@@ -88,6 +110,18 @@ export async function runNewsletterCron(
   });
 
   const queueSummary = await ensureDeliveriesForIssue(prisma, issue, schedule.label, scheduledAt);
+  const sendSummary = await sendNewsletterIssue({
+    issue,
+    prisma,
+    batchSize: options.delivery?.batchSize,
+    maxAttempts: options.delivery?.maxAttempts,
+    baseUrl: options.delivery?.baseUrl,
+    emailClient: options.delivery?.emailClient,
+  });
+  const latestIssue = await prisma.newsletterIssue.findUnique({
+    where: { id: issue.id },
+    select: { status: true, sentAt: true },
+  });
 
   return {
     schedule: serializeSchedule(schedule),
@@ -95,10 +129,12 @@ export async function runNewsletterCron(
       id: issue.id,
       category: issue.category,
       publishDate: issue.publishDate.toISOString(),
-      status: IssueStatus.SCHEDULED,
+      status: latestIssue?.status ?? IssueStatus.SCHEDULED,
+      sentAt: latestIssue?.sentAt?.toISOString() ?? null,
       source,
     },
     deliveries: queueSummary,
+    send: sendSummary,
     backlog,
   };
 }
@@ -108,6 +144,7 @@ async function processBacklogIssues(
   publishDate: Date,
   scheduledAt: Date,
   backlogWindowDays: number,
+  deliveryOptions?: DeliveryOptions,
 ): Promise<BacklogSummary> {
   if (backlogWindowDays <= 0) {
     return { inspected: 0, requeued: 0, issues: [] };
@@ -128,6 +165,14 @@ async function processBacklogIssues(
       limit(async () => {
         const label = getCategoryLabel(issue.category);
         const queueResult = await ensureDeliveriesForIssue(prisma, issue, label, scheduledAt);
+        const sendResult = await sendNewsletterIssue({
+          issue,
+          prisma,
+          batchSize: deliveryOptions?.batchSize,
+          maxAttempts: deliveryOptions?.maxAttempts,
+          baseUrl: deliveryOptions?.baseUrl,
+          emailClient: deliveryOptions?.emailClient,
+        });
 
         return {
           id: issue.id,
@@ -135,6 +180,7 @@ async function processBacklogIssues(
           publishDate: issue.publishDate.toISOString(),
           deliveriesCreated: queueResult.deliveriesCreated,
           subscribersMatched: queueResult.subscribersMatched,
+          send: sendResult,
         };
       }),
     ),
@@ -156,6 +202,7 @@ async function ensureDeliveriesForIssue(
   const eligibleSubscribers = await prisma.subscriber.findMany({
     where: {
       interests: { has: categoryLabel },
+      unsubscribedAt: null,
       OR: [{ lastSentAt: null }, { lastSentAt: { lt: issue.publishDate } }],
     },
     select: { id: true },

@@ -43,9 +43,7 @@ export function normalizeQaPairs(raw: string, options: NormalizeQaOptions) {
   }
 
   if (results.length < minCount) {
-    throw new Error(
-      `Not enough valid QA pairs. expected=${expectedCount}, got=${results.length}`,
-    );
+    throw new Error(`Not enough valid QA pairs. expected=${expectedCount}, got=${results.length}`);
   }
 
   return results;
