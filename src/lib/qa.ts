@@ -2,6 +2,8 @@ import { clamp } from "./utils";
 
 const LIST_MARKER = /^[\s>*-]*((\d+[\.\)])|[-*])\s*/;
 const QUOTE_WRAPPER = /^["“”'`]+|["“”'`]+$/g;
+const QUESTION_PREFIX = /^(?:Q(?:uestion)?|질문)\s*\d*\s*[:\-.\)]\s*/i;
+const ANSWER_PREFIX = /^(?:A(?:nswer)?|답변)\s*\d*\s*[:\-.\)]\s*/i;
 const MAX_QUESTION_LENGTH = 220;
 const MIN_QUESTION_LENGTH = 15;
 const MAX_ANSWER_LENGTH = 600;
@@ -113,11 +115,44 @@ function parseBlockPairs(raw: string) {
 }
 
 function splitInline(value: string) {
-  const cleaned = value.trim();
-  const [questionPart, ...rest] = cleaned.split(/(?:A[:\-]|답변[:\-])/i);
-  const question = questionPart.replace(/^Q[:\-]/i, "").trim();
-  const answer = rest.join(" ").trim();
-  return { question, answer };
+  const cleaned = value.trim().replace(/^\*\*/g, "");
+
+  const normalized = cleaned.replace(LIST_MARKER, "").trim();
+
+  const answerSeparator = /(?:\bA(?:nswer)?|\b답변)\s*\d*\s*[:\-.\)]/i;
+  const [questionPartRaw, ...restRaw] = normalized.split(answerSeparator);
+  const questionPart = questionPartRaw ?? "";
+  let answerPart = restRaw.join(" ").trim();
+
+  if (!answerPart && normalized.includes("\n")) {
+    const lines = normalized.split(/\n+/);
+    const first = lines.shift() ?? "";
+    answerPart = lines.join(" ").trim();
+    return {
+      question: stripQuestionPrefix(first),
+      answer: stripAnswerPrefix(answerPart),
+    };
+  }
+
+  return {
+    question: stripQuestionPrefix(questionPart),
+    answer: stripAnswerPrefix(answerPart),
+  };
+}
+
+function stripQuestionPrefix(input: string) {
+  let value = input.trim();
+  value = value.replace(QUOTE_WRAPPER, "");
+  value = value.replace(LIST_MARKER, "").trim();
+  value = value.replace(QUESTION_PREFIX, "").trim();
+  return value;
+}
+
+function stripAnswerPrefix(input: string) {
+  let value = input.trim();
+  value = value.replace(QUOTE_WRAPPER, "");
+  value = value.replace(ANSWER_PREFIX, "").trim();
+  return value;
 }
 
 function getString(entry: object, keys: string[]) {
@@ -181,27 +216,27 @@ export function buildFallbackQaPairs(categoryLabel: string, count: number): QAPa
     {
       question: `${categoryLabel} 시스템에서 가장 최근에 겪은 장애 상황과 복구 전략을 설명해 주세요.`,
       answer:
-        "장애 감지 시점을 어떻게 앞당겼는지, 장애 범위를 줄이기 위해 어떤 롤백/트래픽 셰이핑 전략을 사용했는지 구체적으로 공유해 주세요.",
+        "지난 분기 새로 도입한 캐시 계층의 메모리 누수로 응답 지연이 4배까지 증가했습니다. 장애를 감지하자마자 읽기 전용 모드로 전환하고, 트래픽 절반을 구 인프라로 우회한 뒤 30분 내에 패치 버전을 배포했습니다. 동일 이슈 재발을 막기 위해 헬스 체크와 메모리 한도 알람을 추가로 설정했습니다.",
     },
     {
       question: `${categoryLabel} 영역에서 서비스 품질(SLO/SLA)을 지키기 위해 도입한 모니터링/알림 체계를 소개해 주세요.`,
       answer:
-        "어떤 지표를 핵심 신호로 사용하며, 알림 노이즈를 줄이기 위해 적용한 룰/자동화가 있다면 상세히 설명해 주세요.",
+        "우리는 Latency P95, 에러율, Saturation 세 가지 지표를 핵심 신호로 삼고 있습니다. 알람 노이즈를 줄이기 위해 히스토리 기반의 동적 임계치를 사용하고, 동일 알람이 3회 이상 반복되면 자동으로 온콜 담당자에게 슬랙 알림과 함께 런북 링크를 전송하도록 설정했습니다.",
     },
     {
       question: `${categoryLabel} 관련 아키텍처 변경이나 기술 선택에서 고려한 트레이드오프를 예시와 함께 설명해 주세요.`,
       answer:
-        "도입 전후 비교 지표, 이해관계자 설득 과정, 예상치 못한 리스크 등을 포함해 주시면 좋습니다.",
+        "신규 분석 파이프라인을 구축할 때, 관리가 쉬운 SaaS 솔루션과 유연한 자체 구축형을 두고 비교했습니다. SaaS는 빠르게 도입 가능했지만 비용이 급증하는 문제가 있었고, 자체 구축은 초기 인력 투입이 많았으나 장기적으로 비용을 절감했습니다. 결국 자체 구축을 선택하고, 초기에 부족한 운영 인력을 보완하기 위해 일시적으로 외부 컨설턴트를 함께 투입했습니다.",
     },
     {
       question: `${categoryLabel} 분야의 기술 부채를 정리하기 위한 프로세스나 의사결정 방식을 공유해 주세요.`,
       answer:
-        "우선순위 산정 기준, 정기적인 리팩토링/성능 개선 사이클, KPI 연계 방식 등을 알려주세요.",
+        "기술 부채는 영향도 x 긴급도 매트릭스로 분류하여 분기마다 별도의 'Quality Sprint'를 확보합니다. 각 항목에는 해결 시 기대되는 KPI 개선 값을 붙이고, 제품 팀과 합의된 목표 대비 진행률을 위클리 리포트로 공유해 우선순위가 흔들리지 않도록 하고 있습니다.",
     },
     {
       question: `${categoryLabel} 팀이 향후 6개월 동안 집중하고 싶은 ${categoryLabel} 트렌드나 실험 계획은 무엇인가요?`,
       answer:
-        "현재 확보한 리소스, 실험 성공 기준, 리스크 완화 계획 등 실행 전략을 중심으로 설명해 주세요.",
+        "앞으로 6개월 동안은 서버리스 워크로드와 AI 보조 도구를 결합해 배포 효율을 높이는 실험을 진행합니다. 실험 성공 기준은 배포 준비 시간 30% 감축이며, 보안 사고를 막기 위해 모든 자동화 플로우에 승인 단계를 넣고 감사 로그를 남기도록 설계했습니다.",
     },
   ];
 

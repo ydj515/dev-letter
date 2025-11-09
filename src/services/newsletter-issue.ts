@@ -15,7 +15,7 @@ export type IssueCreationSource = "existing" | "ai" | "fallback";
 
 type NewsletterIssueRepository = Pick<PrismaClient, "newsletterIssue">;
 
-const ESTIMATED_TOKENS_PER_QA_PAIR = 120;
+const ESTIMATED_TOKENS_PER_QA_PAIR = 1000;//qa 한세트당 max토큰
 
 export interface CreateNewsletterIssueOptions {
   category: InterestCategory;
@@ -57,6 +57,8 @@ export async function createNewsletterIssue(
   let qaPairs: ReturnType<typeof buildFallbackQaPairs> | null = null;
   let source: IssueCreationSource = "fallback";
 
+  let aiOutput: string | undefined;
+
   try {
     const aiResult = await aiClient.generateText(prompt, {
       temperature: template.temperature,
@@ -67,12 +69,24 @@ export async function createNewsletterIssue(
       },
     });
 
-    qaPairs = normalizeQaPairs(aiResult.text, {
+    aiOutput = aiResult.text;
+
+    if (process.env.NODE_ENV !== "production") {
+      console.debug(
+        `[Gemini][raw-output] category=${category} publishDate=${publishDate.toISOString()}\n${aiOutput}`,
+      );
+    }
+
+    qaPairs = normalizeQaPairs(aiOutput, {
       expectedCount: template.questionCount,
     });
     source = "ai";
   } catch (error) {
-    console.warn(`[NewsletterIssue] AI generation failed for ${category}:`, error);
+    console.warn(
+      `[NewsletterIssue] AI generation failed for ${category}. error=${
+        error instanceof Error ? error.message : String(error)
+      }\nRaw output:\n${aiOutput ?? "<no output>"}`,
+    );
   }
 
   if (!qaPairs) {

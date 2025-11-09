@@ -18,9 +18,11 @@ const DEFAULT_TEMPLATE = {
   tone: "실무형" as Tone,
   temperature: 0.45,
   format: [
-    '결과는 JSON 배열로 출력하며 각 항목은 {"question": string, "answer": string} 형식',
-    "question: 1문장, 200자 이하, 반드시 ? 로 종료",
-    "answer: 2~3문장, 최대 600자, 실무적인 해결 방향/예시 포함",
+    "OUTPUT FORMAT STRICTLY:",
+    '1. JSON 배열만 출력: [{"question": "...?", "answer": "..."}]',
+    "2. question: 1문장, 200자 이하, 반드시 ?로 종료",
+    "3. answer: 2~3문장, 최대 600자, 실무 경험과 수치/전략 포함",
+    "4. JSON 외 다른 텍스트, Markdown, 주석 금지",
   ].join("\n"),
   guidelines: [
     "사건/장애/프로덕션 이슈와 관련된 의사결정을 묻는다.",

@@ -1,4 +1,10 @@
-import { GoogleGenerativeAI, type GenerativeModel } from "@google/generative-ai";
+import {
+  GoogleGenerativeAI,
+  HarmBlockThreshold,
+  HarmCategory,
+  type GenerativeModel,
+  type SafetySetting,
+} from "@google/generative-ai";
 
 export interface AiUsage {
   inputTokens: number;
@@ -41,7 +47,7 @@ export class GeminiClient implements AiClient {
   constructor(private readonly maxRetries = 2) {}
 
   async generateText(prompt: string, options: AiGenerateOptions = {}) {
-    const { temperature = 0.4, maxOutputTokens = 512, timeoutMs = 15_000, metadata } = options;
+    const { temperature = 0.4, maxOutputTokens = 512, timeoutMs = 300_000, metadata } = options;
 
     const model = this.getModel();
 
@@ -58,12 +64,16 @@ export class GeminiClient implements AiClient {
                 temperature,
                 maxOutputTokens,
               },
+              safetySettings: buildSafetySettings(),
             }),
           timeoutMs,
         );
         const latencyMs = Date.now() - start;
 
-        const text = result.response.text();
+        const candidates = result.response.candidates ?? [];
+        logCandidates(candidates, metadata);
+
+        const text = extractCandidateText(candidates) ?? result.response.text() ?? "";
         const usage = mapUsage(result.response.usageMetadata, latencyMs);
 
         logUsage(usage, metadata);
@@ -103,6 +113,13 @@ type UsageMetadata = {
   totalTokenCount?: number;
 };
 
+type Candidate = {
+  finishReason?: string;
+  finishMessage?: string;
+  safetyRatings?: Array<{ category?: string; probability?: string; blocked?: boolean }>;
+  content?: { parts?: Array<{ text?: string }> };
+};
+
 function mapUsage(usage: UsageMetadata | null | undefined, latencyMs: number): AiUsage | undefined {
   if (!usage) return undefined;
 
@@ -126,6 +143,65 @@ function logUsage(usage: AiUsage | undefined, metadata?: Record<string, unknown>
   console.info(
     `${prefix} tokens(in:${usage.inputTokens}, out:${usage.outputTokens}) cost=$${usage.costUsd ?? 0} latency=${usage.latencyMs}ms`,
   );
+}
+
+function logCandidates(candidates: Candidate[], metadata?: Record<string, unknown>) {
+  if (process.env.NODE_ENV === "production") return;
+  const prefix = metadata ? `[Gemini:${JSON.stringify(metadata)}]` : "[Gemini]";
+  if (!candidates || candidates.length === 0) {
+    console.debug(`${prefix} candidates=[]`);
+    return;
+  }
+  const summary = candidates.map((candidate, index) => ({
+    index,
+    finishReason: candidate.finishReason ?? "UNKNOWN",
+    finishMessage: candidate.finishMessage ?? null,
+    safetyRatings: candidate.safetyRatings?.map((rating) => ({
+      category: rating.category,
+      probability: rating.probability,
+      blocked: rating.blocked,
+    })),
+    textPreview: candidate.content?.parts
+      ?.map((part) => part.text ?? "")
+      .join(" ")
+      .slice(0, 200),
+  }));
+  console.debug(`${prefix} candidates=${JSON.stringify(summary, null, 2)}`);
+}
+
+function extractCandidateText(candidates: Candidate[]) {
+  for (const candidate of candidates) {
+    const parts = candidate?.content?.parts;
+    if (!parts) continue;
+    const textParts = parts
+      .map((part) => part.text)
+      .filter((value): value is string => typeof value === "string" && value.trim().length > 0);
+    if (textParts.length > 0) {
+      return textParts.join("\n\n");
+    }
+  }
+  return null;
+}
+
+function buildSafetySettings(): SafetySetting[] {
+  return [
+    {
+      category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+      threshold: HarmBlockThreshold.BLOCK_NONE,
+    },
+    {
+      category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+      threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
+    },
+    {
+      category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+      threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
+    },
+    {
+      category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+      threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
+    },
+  ];
 }
 
 type HttpError = Error & { status?: number };
