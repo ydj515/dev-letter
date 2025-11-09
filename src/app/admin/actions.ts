@@ -1,6 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { InterestCategory } from "@prisma/client";
 import { approveIssue, generateIssue, resendIssue } from "@/services/admin-dashboard";
 
@@ -25,4 +27,9 @@ export async function generateIssueAction(input: {
   const result = await generateIssue({ category: input.category, publishDate }, input.actor);
   revalidatePath("/admin");
   return result;
+}
+
+export async function logoutAdminAction() {
+  cookies().delete("admin-auth");
+  redirect("/admin/login");
 }

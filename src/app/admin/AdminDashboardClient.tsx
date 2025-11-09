@@ -4,7 +4,12 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { InterestCategory } from "@prisma/client";
 import type { AdminDashboardData, DashboardIssue } from "@/services/admin-dashboard";
-import { approveIssueAction, generateIssueAction, resendIssueAction } from "./actions";
+import {
+  approveIssueAction,
+  generateIssueAction,
+  logoutAdminAction,
+  resendIssueAction,
+} from "./actions";
 
 interface Props {
   data: AdminDashboardData;
@@ -71,6 +76,17 @@ export default function AdminDashboardClient({ data }: Props) {
   const handleResend = (issueId: string) =>
     handleAction(() => resendIssueAction({ issueId, actor: operator }), "재발송이 실행되었습니다.");
 
+  const handleLogout = () => {
+    startTransition(async () => {
+      try {
+        await logoutAdminAction();
+      } catch (error) {
+        console.error(error);
+        setErrorMessage(error instanceof Error ? error.message : "로그아웃에 실패했습니다.");
+      }
+    });
+  };
+
   const handleGenerate = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     handleAction(
@@ -110,7 +126,7 @@ export default function AdminDashboardClient({ data }: Props) {
       </section>
 
       <section className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-lg border border-gray-800 bg-gray-900 p-4 space-y-2">
+        <div className="rounded-lg border border-gray-800 bg-gray-900 p-4 space-y-3">
           <label className="text-sm font-semibold text-gray-200">운영자 이름</label>
           <input
             type="text"
@@ -122,6 +138,13 @@ export default function AdminDashboardClient({ data }: Props) {
           <p className="text-xs text-gray-500">
             모든 승인/재발송/생성 액션은 감사 로그에 기록되며, 운영자 이름이 필요합니다.
           </p>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="rounded-md border border-gray-700 px-3 py-1.5 text-xs font-medium text-gray-300 transition hover:border-rose-500 hover:text-rose-300"
+          >
+            로그아웃
+          </button>
         </div>
 
         <form

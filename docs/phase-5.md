@@ -7,6 +7,7 @@ Phase 5에서는 **운영자가 매일 발행되는 이슈를 직접 감시하�
 ![admin page image](./admin-page.png)
 
 - Next.js 라우트 `src/app/admin/page.tsx`가 서버에서 최신 이슈/감사 로그를 불러오고, 클라이언트 컴포넌트(`AdminDashboardClient`)에서 UI를 그린다.
+- `/admin/login` 페이지에서 단일 관리자 계정(환경 변수 기반)을 입력하면 `admin-auth` 쿠키가 발급되고, 미들웨어가 해당 쿠키를 검증해 `/admin` 접근을 허용한다.
 - 운영자는 “운영자 이름”을 입력해야 승인/재발송/즉시 생성 버튼이 활성화된다. 이름은 감사 로그에 남는다(로컬 스토리지 저장).
 - 대시보드 기능
   - **요약 카드**: 총 발행 수, 대기 중 이슈, 실패 이슈, 평균 성공률을 노출.
@@ -48,6 +49,7 @@ Phase 5에서는 **운영자가 매일 발행되는 이슈를 직접 감시하�
   - `APP_BASE_URL`: CTA/수신 거부 링크 구성
   - `SLACK_WEBHOOK_URL`: 알림 전송
   - `CRON_SECRET`: `/api/cron/newsletter` 보호
+  - `ADMIN_USERNAME`, `ADMIN_PASSWORD`: `/admin/login` 인증 및 미들웨어 쿠키 검증
   - `VERCEL_PROTECTION_BYPASS` 또는 별도 보호 수단(운영 환경에서 `/admin` 접근 제한 권장)
 
 Phase 5 완료로 운영자는 `/admin` 페이지에서 콘텐츠 생성·큐 생성·발송 재시도를 직접 제어하고, Slack 알림과 메트릭을 통해 즉시 이상 징후를 발견할 수 있다. 이제 Phase 6에서 테스트/문서화/롤아웃을 마무리하면 실제 서비스 운영 준비가 끝난다.
