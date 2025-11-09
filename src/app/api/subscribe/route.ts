@@ -50,7 +50,15 @@ export async function POST(req: NextRequest) {
 
     // Send confirmation email
     const resend = new Resend(process.env.RESEND_API_KEY);
-    const emailHtml = await render(SubscriptionConfirmation({ email, interests }));
+    const baseUrl = process.env.APP_BASE_URL ?? "https://dev-letter.dev";
+    const emailHtml = await render(
+      SubscriptionConfirmation({
+        email,
+        interests,
+        manageUrl: buildAbsoluteUrl(baseUrl, "/newsletter/manage"),
+        contactUrl: buildAbsoluteUrl(baseUrl, "/contact"),
+      }),
+    );
 
     const senderEmail = process.env.RESEND_FROM_EMAIL;
 
@@ -84,5 +92,14 @@ export async function POST(req: NextRequest) {
     );
   } finally {
     await prisma.$disconnect();
+  }
+}
+
+function buildAbsoluteUrl(base: string, pathname: string) {
+  try {
+    const url = new URL(pathname, base);
+    return url.toString();
+  } catch {
+    return base;
   }
 }

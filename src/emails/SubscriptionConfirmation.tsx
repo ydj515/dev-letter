@@ -14,11 +14,15 @@ import * as React from "react";
 interface SubscriptionConfirmationProps {
   email: string;
   interests: string[];
+  manageUrl: string;
+  contactUrl: string;
 }
 
 export default function SubscriptionConfirmation({
   email,
   interests,
+  manageUrl,
+  contactUrl,
 }: SubscriptionConfirmationProps) {
   return (
     <Html>
@@ -51,11 +55,11 @@ export default function SubscriptionConfirmation({
             이 이메일은 AI-Powered Developer Insights 뉴스레터 구독을 신청하신 분께 발송되었습니다.
           </Text>
           <Text style={footer}>
-            <Link href="#" style={link}>
-              구독 취소
+            <Link href={manageUrl} style={link}>
+              구독 관리
             </Link>{" "}
             |{" "}
-            <Link href="#" style={link}>
+            <Link href={contactUrl} style={link}>
               문의하기
             </Link>
           </Text>
