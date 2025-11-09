@@ -3,7 +3,7 @@ import { listCategoryRotation } from "./categories";
 import { startOfDay } from "./utils";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
-const DEFAULT_CYCLE_START = startOfDay(new Date("2024-01-01"));
+const DEFAULT_CYCLE_START = startOfDay(new Date("2025-11-09"));
 const ROTATION = listCategoryRotation();
 
 export interface DailyCategorySchedule {
