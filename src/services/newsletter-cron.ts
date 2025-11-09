@@ -202,6 +202,7 @@ async function ensureDeliveriesForIssue(
   const eligibleSubscribers = await prisma.subscriber.findMany({
     where: {
       interests: { has: categoryLabel },
+      unsubscribedAt: null,
       OR: [{ lastSentAt: null }, { lastSentAt: { lt: issue.publishDate } }],
     },
     select: { id: true },
