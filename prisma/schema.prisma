@@ -58,7 +58,9 @@ model NewsletterIssue {
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
 
-  deliveries IssueDelivery[]
+  deliveries   IssueDelivery[]
+  metric       IssueMetric?
+  adminActions AdminActionLog[]
 
   @@unique([category, publishDate])
 }
@@ -78,4 +80,29 @@ model IssueDelivery {
   @@index([issueId])
   @@index([subscriberId])
   @@unique([issueId, subscriberId])
+}
+
+model IssueMetric {
+  id               String          @id @default(cuid())
+  issueId          String          @unique
+  sentCount        Int             @default(0)
+  failedCount      Int             @default(0)
+  pendingCount     Int             @default(0)
+  successRate      Float           @default(0)
+  lastCalculatedAt DateTime        @default(now())
+
+  issue NewsletterIssue @relation(fields: [issueId], references: [id], onDelete: Cascade)
+}
+
+model AdminActionLog {
+  id        String          @id @default(cuid())
+  issueId   String?
+  actor     String
+  action    String
+  metadata  Json?           @db.JsonB
+  createdAt DateTime        @default(now())
+
+  issue NewsletterIssue? @relation(fields: [issueId], references: [id], onDelete: SetNull)
+
+  @@index([issueId])
 }

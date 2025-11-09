@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { runNewsletterCron } from "@/services/newsletter-cron";
+import { publishAlert } from "@/lib/alerts";
 
 export async function POST(request: NextRequest) {
   const secret = process.env.CRON_SECRET;
@@ -20,6 +21,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true, result });
   } catch (error) {
     console.error("[Cron] Failed to run newsletter cron:", error);
+    await publishAlert({
+      severity: "critical",
+      title: "[Cron] Newsletter job failed",
+      message: error instanceof Error ? error.message : "Unknown error",
+      context: {
+        endpoint: "/api/cron/newsletter",
+        timestamp: new Date().toISOString(),
+      },
+    });
     return NextResponse.json(
       {
         ok: false,

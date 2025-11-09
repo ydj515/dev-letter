@@ -12,11 +12,13 @@ import { getCategoryLabel } from "../lib/categories";
 import { renderDailyNewsletterEmail } from "../lib/email";
 import { prisma as defaultPrisma } from "../lib/prisma";
 import { getResendClient, getSenderEmail } from "../lib/resend";
+import { publishAlert } from "../lib/alerts";
 import type { QAPair } from "../lib/qa";
+import { recordIssueMetrics, type IssueMetricsSnapshot } from "./issue-metrics";
 
 type NewsletterDeliveryRepository = Pick<
   PrismaClient,
-  "issueDelivery" | "subscriber" | "newsletterIssue"
+  "issueDelivery" | "subscriber" | "newsletterIssue" | "issueMetric"
 >;
 
 const DEFAULT_BATCH_SIZE = 40; // Resend batch limit is 50
@@ -40,6 +42,7 @@ export interface SendNewsletterIssueResult {
   requeued: number;
   disabled?: boolean;
   reason?: string;
+  metrics?: IssueMetricsSnapshot;
 }
 
 type IssueDeliveryWithSubscriber = IssueDelivery & {
@@ -163,6 +166,8 @@ export async function sendNewsletterIssue(
   }
 
   await finalizeIssue(prisma, options.issue.id, summary.sent);
+  summary.metrics = await recordIssueMetrics(options.issue.id, prisma);
+  await maybePublishDeliveryAlert(summary, options.issue, categoryLabel);
   return summary;
 }
 
@@ -384,4 +389,40 @@ function disabledResult(reason: string): SendNewsletterIssueResult {
     disabled: true,
     reason,
   };
+}
+
+async function maybePublishDeliveryAlert(
+  result: SendNewsletterIssueResult,
+  issue: NewsletterIssue,
+  categoryLabel: string,
+) {
+  if (result.disabled) {
+    await publishAlert({
+      severity: "critical",
+      title: `[Newsletter] Delivery disabled for ${categoryLabel}`,
+      message: result.reason ?? "Delivery skipped due to missing configuration",
+      context: {
+        issueId: issue.id,
+        publishDate: issue.publishDate.toISOString(),
+      },
+    });
+    return;
+  }
+
+  if (result.failed === 0) {
+    return;
+  }
+
+  await publishAlert({
+    severity: "warning",
+    title: `[Newsletter] ${categoryLabel} delivery failures`,
+    message: `${result.failed} deliveries failed after ${result.batches} batches`,
+    context: {
+      issueId: issue.id,
+      publishDate: issue.publishDate.toISOString(),
+      attempted: result.attempted,
+      sent: result.sent,
+      requeued: result.requeued,
+    },
+  });
 }

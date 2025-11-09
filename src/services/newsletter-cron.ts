@@ -193,7 +193,7 @@ async function processBacklogIssues(
   };
 }
 
-async function ensureDeliveriesForIssue(
+export async function ensureDeliveriesForIssue(
   prisma: PrismaClient,
   issue: NewsletterIssue,
   categoryLabel: string,
