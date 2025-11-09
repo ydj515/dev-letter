@@ -7,7 +7,7 @@ import { encodeAdminCredentials } from "@/lib/admin-auth";
 export const dynamic = "force-dynamic";
 
 export default async function AdminPage() {
-  ensureAdminSession();
+  await ensureAdminSession();
   const data = await fetchAdminDashboardData({ limit: 10 });
   return (
     <main className="min-h-screen bg-gray-950 text-gray-100 p-6">
@@ -25,14 +25,15 @@ export default async function AdminPage() {
   );
 }
 
-function ensureAdminSession() {
+async function ensureAdminSession() {
   const username = process.env.ADMIN_USERNAME;
   const password = process.env.ADMIN_PASSWORD;
   if (!username || !password) {
     throw new Error("ADMIN_USERNAME/ADMIN_PASSWORD are not configured");
   }
 
-  const token = cookies().get("admin-auth")?.value;
+  const store = await cookies();
+  const token = store.get("admin-auth")?.value;
   const expected = encodeAdminCredentials(username, password);
 
   if (token !== expected) {

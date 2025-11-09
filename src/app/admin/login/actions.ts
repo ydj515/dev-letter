@@ -25,7 +25,8 @@ export async function authenticateAdmin(
   }
 
   const token = encodeAdminCredentials(adminUsername, adminPassword);
-  cookies().set("admin-auth", token, {
+  const store = await cookies();
+  store.set("admin-auth", token, {
     httpOnly: true,
     sameSite: "strict",
     secure: process.env.NODE_ENV === "production",
@@ -37,7 +38,8 @@ export async function authenticateAdmin(
 }
 
 export async function logoutAdmin() {
-  cookies().delete("admin-auth");
+  const store = await cookies();
+  store.delete("admin-auth");
   redirect("/admin/login");
 }
 

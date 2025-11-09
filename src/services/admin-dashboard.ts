@@ -137,7 +137,7 @@ export async function approveIssue(
     issueId: issue.id,
     actor,
     action: "approve_issue",
-    metadata: queue,
+    metadata: queue as unknown as Prisma.JsonObject,
   });
 
   return { issueId: issue.id, queue };
@@ -239,7 +239,7 @@ async function logAdminAction(
     issueId: string;
     actor: string;
     action: string;
-    metadata?: Record<string, unknown>;
+    metadata?: Prisma.JsonValue;
   },
 ) {
   await prisma.adminActionLog.create({
@@ -247,7 +247,7 @@ async function logAdminAction(
       issueId: entry.issueId,
       actor: entry.actor,
       action: entry.action,
-      metadata: entry.metadata as Prisma.JsonObject | undefined,
+      metadata: entry.metadata ?? Prisma.JsonNull,
     },
   });
 }

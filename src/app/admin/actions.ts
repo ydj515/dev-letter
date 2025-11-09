@@ -30,6 +30,7 @@ export async function generateIssueAction(input: {
 }
 
 export async function logoutAdminAction() {
-  cookies().delete("admin-auth");
+  const store = await cookies();
+  store.delete("admin-auth");
   redirect("/admin/login");
 }

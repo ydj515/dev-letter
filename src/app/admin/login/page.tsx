@@ -1,13 +1,17 @@
 import LoginForm from "./LoginForm";
 
-interface LoginPageProps {
-  searchParams: {
-    redirect?: string;
-  };
-}
+type SearchParams = Record<string, string | string[] | undefined>;
 
-export default function AdminLoginPage({ searchParams }: LoginPageProps) {
-  const redirectTo = normalizeRedirect(searchParams.redirect);
+export default async function AdminLoginPage({
+  searchParams,
+}: {
+  searchParams?: Promise<SearchParams>;
+}) {
+  const resolved = (await searchParams) ?? {};
+  const redirectParam = resolved.redirect;
+  const redirectTo = normalizeRedirect(
+    Array.isArray(redirectParam) ? redirectParam[0] : redirectParam,
+  );
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-gray-950 p-6 text-gray-100">
