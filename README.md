@@ -57,12 +57,14 @@ RESEND_API_KEY="your_resend_api_key"
 RESEND_FROM_EMAIL="onboarding@your-domain.com"
 GEMINI_API_KEY="your_google_gemini_api_key"
 CRON_SECRET="randomly_generated_string"
+APP_BASE_URL="your_domain"
 ```
 
 - `RESEND_API_KEY`는 구독 확인 메일 발송에 사용합니다.
 - `RESEND_FROM_EMAIL`은 Resend에서 인증한 발신 주소를 설정합니다(샌드박스 기본값은 `onboarding@resend.dev`).
 - `GEMINI_API_KEY`는 `/api/user-input`과 실제 질문 생성 로직에 사용합니다. 키가 없으면 질문 생성기는 샘플 데이터를 반환합니다.
 - `CRON_SECRET`은 Vercel Cron(Webhook) 혹은 외부 워커가 `/api/cron/newsletter` 엔드포인트를 호출할 때 사용하는 shared secret입니다.
+- `APP_BASE_URL`은 템플릿 내 CTA/수신 거부 링크를 생성하고 `List-Unsubscribe` 헤더에 포함되는 기준 URL입니다.
 
 ### 4. 데이터베이스 마이그레이션
 
@@ -104,6 +106,7 @@ Vercel 또는 Next.js가 지원하는 기타 플랫폼에 손쉽게 배포할 �
    - 최근 3일간 `SENT`로 전환되지 않은 이슈를 재큐잉합니다.
    - 순환 규칙에 따라 오늘 발행할 카테고리를 선택하고 `NewsletterIssue`를 생성합니다.
    - 관심사가 일치하고 당일 발송 이력이 없는 구독자를 찾아 `IssueDelivery`를 생성하고 상태를 `SCHEDULED`로 전환합니다.
+   - React Email 템플릿을 HTML/텍스트로 렌더링한 뒤 Resend 배치 발송을 수행하고, 결과를 `IssueDelivery`(`SENT/FAILED`)에 기록합니다. 모든 이메일에는 CTA·`List-Unsubscribe` 헤더·수신 거부 링크가 포함됩니다.
 4. 로컬에서 동일한 로직을 수동으로 실행하고 싶은 경우 `npm run cron:send`를 사용합니다. `npm run cron:send -- --date=2025-11-09`처럼 특정 일자를 지정할 수도 있습니다.
 
 ## 페이지 & API 요약
@@ -114,6 +117,7 @@ Vercel 또는 Next.js가 지원하는 기타 플랫폼에 손쉽게 배포할 �
 - `POST /api/subscribe` : Prisma에 구독자를 저장하고 확인 메일 발송
 - `POST /api/generate-questions` : Gemini 연동(샘플 응답 기본값)을 통한 질문 생성
 - `POST /api/user-input` : 자유 입력 프롬프트를 Gemini 2.0 Flash로 전달하고 결과 반환
+- `GET /api/unsubscribe` : 수신 거부 토큰/딜리버리 ID를 바탕으로 구독을 비활성화하고 확인 페이지를 반환
 
 ## NPM 스크립트
 

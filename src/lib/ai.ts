@@ -32,7 +32,8 @@ const MODEL_PRICING = {
   },
 } as const;
 const MODEL_PRICING_FALLBACK = MODEL_PRICING["gemini-2.0-flash"];
-const PRICING = MODEL_PRICING[DEFAULT_MODEL as keyof typeof MODEL_PRICING] ?? MODEL_PRICING_FALLBACK;
+const PRICING =
+  MODEL_PRICING[DEFAULT_MODEL as keyof typeof MODEL_PRICING] ?? MODEL_PRICING_FALLBACK;
 
 export class GeminiClient implements AiClient {
   private model: GenerativeModel | null = null;

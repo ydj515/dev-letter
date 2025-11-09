@@ -40,6 +40,8 @@ model Subscriber {
   createdAt         DateTime         @default(now())
   lastSentAt        DateTime?
   preferredSendTime String?
+  unsubscribedAt    DateTime?
+  unsubscribeToken  String           @unique @default(cuid())
   deliveries        IssueDelivery[]
 }
 

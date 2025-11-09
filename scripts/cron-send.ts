@@ -41,6 +41,14 @@ async function main() {
       `Backlog inspected=${result.backlog.inspected}, requeued=${result.backlog.requeued}`,
     );
   }
+
+  if (result.send.disabled) {
+    console.log(`[Send] skipped because ${result.send.reason}`);
+  } else {
+    console.log(
+      `[Send] batches=${result.send.batches} sent=${result.send.sent} failed=${result.send.failed} skipped=${result.send.skipped}`,
+    );
+  }
 }
 
 main()

@@ -6,7 +6,7 @@ import { getDailyCategorySchedule } from "../src/lib/category-rotation";
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 test("cycles through each interest category sequentially", () => {
-  const start = new Date("2024-01-01T00:00:00Z");
+  const start = new Date("2025-11-09T00:00:00Z");
   const totalDays = INTEREST_CATEGORIES.length * 2;
 
   for (let day = 0; day < totalDays; day += 1) {
