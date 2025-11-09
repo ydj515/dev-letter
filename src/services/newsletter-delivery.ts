@@ -31,6 +31,7 @@ export interface SendNewsletterIssueOptions {
   maxAttempts?: number;
   emailClient?: BatchEmailClient;
   baseUrl?: string;
+  includeFailed?: boolean;
 }
 
 export interface SendNewsletterIssueResult {
@@ -84,6 +85,9 @@ export async function sendNewsletterIssue(
   const baseUrl = options.baseUrl ?? process.env.APP_BASE_URL;
   const qaPairs = normalizeQaPairs(options.issue.qaPairs);
   const categoryLabel = getCategoryLabel(options.issue.category);
+  const eligibleStatuses = options.includeFailed
+    ? [DeliveryStatus.PENDING, DeliveryStatus.FAILED]
+    : [DeliveryStatus.PENDING];
 
   if (!baseUrl) {
     return disabledResult("APP_BASE_URL is not configured");
@@ -118,7 +122,16 @@ export async function sendNewsletterIssue(
 
   while (true) {
     if (queue.length === 0) {
-      const pending = await fetchPendingDeliveries(prisma, options.issue.id, batchSize);
+      let pending = await fetchDeliveries(prisma, options.issue.id, batchSize, eligibleStatuses);
+      if (pending.length > 0 && options.includeFailed) {
+        const failedDeliveries = pending.filter((delivery) => delivery.status === DeliveryStatus.FAILED);
+        if (failedDeliveries.length > 0) {
+          await resetFailedDeliveries(prisma, failedDeliveries.map((delivery) => delivery.id));
+          pending = pending.map((delivery) =>
+            delivery.status === DeliveryStatus.FAILED ? { ...delivery, status: DeliveryStatus.PENDING } : delivery,
+          );
+        }
+      }
       if (pending.length === 0) {
         break;
       }
@@ -171,13 +184,17 @@ export async function sendNewsletterIssue(
   return summary;
 }
 
-async function fetchPendingDeliveries(
+async function fetchDeliveries(
   prisma: NewsletterDeliveryRepository,
   issueId: string,
   batchSize: number,
+  statuses: DeliveryStatus[],
 ) {
   return prisma.issueDelivery.findMany({
-    where: { issueId, status: DeliveryStatus.PENDING },
+    where: {
+      issueId,
+      status: statuses.length === 1 ? statuses[0] : { in: statuses },
+    },
     include: {
       subscriber: {
         select: {
@@ -190,6 +207,17 @@ async function fetchPendingDeliveries(
     },
     orderBy: { createdAt: "asc" },
     take: batchSize,
+  });
+}
+
+async function resetFailedDeliveries(prisma: NewsletterDeliveryRepository, deliveryIds: string[]) {
+  if (deliveryIds.length === 0) return;
+  await prisma.issueDelivery.updateMany({
+    where: { id: { in: deliveryIds }, status: DeliveryStatus.FAILED },
+    data: {
+      status: DeliveryStatus.PENDING,
+      error: null,
+    },
   });
 }
 

@@ -172,6 +172,7 @@ async function processBacklogIssues(
           maxAttempts: deliveryOptions?.maxAttempts,
           baseUrl: deliveryOptions?.baseUrl,
           emailClient: deliveryOptions?.emailClient,
+          includeFailed: true,
         });
 
         return {

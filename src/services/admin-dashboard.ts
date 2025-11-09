@@ -162,7 +162,11 @@ export async function resendIssue(
     throw new Error("Issue not found");
   }
 
-  const send = await sendNewsletterIssue({ issue, prisma });
+  const send = await sendNewsletterIssue({
+    issue,
+    prisma,
+    includeFailed: true,
+  });
 
   await logAdminAction(prisma, {
     issueId: issue.id,
