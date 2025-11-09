@@ -56,11 +56,13 @@ PRISMA_DATABASE_URL="postgres://user:password@host:5432/dbname"
 RESEND_API_KEY="your_resend_api_key"
 RESEND_FROM_EMAIL="onboarding@your-domain.com"
 GEMINI_API_KEY="your_google_gemini_api_key"
+CRON_SECRET="randomly_generated_string"
 ```
 
 - `RESEND_API_KEY`는 구독 확인 메일 발송에 사용합니다.
 - `RESEND_FROM_EMAIL`은 Resend에서 인증한 발신 주소를 설정합니다(샌드박스 기본값은 `onboarding@resend.dev`).
 - `GEMINI_API_KEY`는 `/api/user-input`과 실제 질문 생성 로직에 사용합니다. 키가 없으면 질문 생성기는 샘플 데이터를 반환합니다.
+- `CRON_SECRET`은 Vercel Cron(Webhook) 혹은 외부 워커가 `/api/cron/newsletter` 엔드포인트를 호출할 때 사용하는 shared secret입니다.
 
 ### 4. 데이터베이스 마이그레이션
 
@@ -93,6 +95,17 @@ npm run start
 
 Vercel 또는 Next.js가 지원하는 기타 플랫폼에 손쉽게 배포할 수 있습니다.
 
+## 자동 발행 Cron
+
+1. `.env`에 `CRON_SECRET`을 설정합니다.
+2. Vercel Cron(또는 기타 워커)에서 `POST https://<domain>/api/cron/newsletter`를 호출하도록 스케줄을 추가합니다.
+   - 헤더 `Authorization: Bearer <CRON_SECRET>`를 반드시 포함합니다.
+3. 잡은 아래 단계를 실행합니다.
+   - 최근 3일간 `SENT`로 전환되지 않은 이슈를 재큐잉합니다.
+   - 순환 규칙에 따라 오늘 발행할 카테고리를 선택하고 `NewsletterIssue`를 생성합니다.
+   - 관심사가 일치하고 당일 발송 이력이 없는 구독자를 찾아 `IssueDelivery`를 생성하고 상태를 `SCHEDULED`로 전환합니다.
+4. 로컬에서 동일한 로직을 수동으로 실행하고 싶은 경우 `npm run cron:send`를 사용합니다. `npm run cron:send -- --date=2025-11-09`처럼 특정 일자를 지정할 수도 있습니다.
+
 ## 페이지 & API 요약
 
 - `/` : 구독 폼, 기술 스택 캐러셀, 주요 페이지 링크
@@ -112,6 +125,7 @@ Vercel 또는 Next.js가 지원하는 기타 플랫폼에 손쉽게 배포할 �
 - `npm run seed:newsletter` : 카테고리별 샘플 뉴스레터 이슈와 질문/답변 세트를 생성
 - `npm run analyze:subs` : 구독자 관심사 분포 및 유효성 검사를 콘솔 리포트로 출력
 - `npm run test:newsletter` : Gemini 목킹 기반 콘텐츠 파이프라인 인수 테스트 실행
+- `npm run cron:send` : 뉴스레터 스케줄러를 수동 실행하며 발행/발송 큐를 재구성
 
 ## 에디터 & 포맷팅
 
