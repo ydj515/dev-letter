@@ -4,6 +4,10 @@ Phase 5에서는 **운영자가 매일 발행되는 이슈를 직접 감시하�
 
 ## 1. 관리자 대시보드 (/admin)
 
+![admin login page image](./admin-login.png)
+
+- `.env` 지정된 관리자 id, pw로 로그인을 할 수 있다.
+
 ![admin page image](./admin-page.png)
 
 - Next.js 라우트 `src/app/admin/page.tsx`가 서버에서 최신 이슈/감사 로그를 불러오고, 클라이언트 컴포넌트(`AdminDashboardClient`)에서 UI를 그린다.
