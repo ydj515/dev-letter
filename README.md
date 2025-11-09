@@ -58,6 +58,8 @@ RESEND_FROM_EMAIL="onboarding@your-domain.com"
 GEMINI_API_KEY="your_google_gemini_api_key"
 CRON_SECRET="randomly_generated_string"
 APP_BASE_URL="your_domain"
+ADMIN_USERNAME="your_admin_id"
+ADMIN_PASSWORD="your_admin_password"
 ```
 
 - `RESEND_API_KEY`는 구독 확인 메일 발송에 사용합니다.
