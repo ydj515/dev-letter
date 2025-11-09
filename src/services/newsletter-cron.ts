@@ -5,6 +5,7 @@ import {
   type NewsletterIssue,
   type PrismaClient,
 } from "@prisma/client";
+import pLimit from "p-limit";
 import { geminiClient, type AiClient } from "../lib/ai";
 import { getCategoryLabel } from "../lib/categories";
 import { getDailyCategorySchedule, type DailyCategorySchedule } from "../lib/category-rotation";
@@ -14,6 +15,7 @@ import { createNewsletterIssue, type IssueCreationSource } from "./newsletter-is
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const DEFAULT_BACKLOG_WINDOW_DAYS = 3;
+const BACKLOG_CONCURRENCY = 4;
 
 export interface RunNewsletterCronOptions {
   date?: Date;
@@ -120,20 +122,23 @@ async function processBacklogIssues(
     orderBy: { publishDate: "asc" },
   });
 
-  const summaries: BacklogIssueSummary[] = [];
+  const limit = pLimit(BACKLOG_CONCURRENCY);
+  const summaries = await Promise.all(
+    backlogIssues.map((issue) =>
+      limit(async () => {
+        const label = getCategoryLabel(issue.category);
+        const queueResult = await ensureDeliveriesForIssue(prisma, issue, label, scheduledAt);
 
-  for (const issue of backlogIssues) {
-    const label = getCategoryLabel(issue.category);
-    const queueResult = await ensureDeliveriesForIssue(prisma, issue, label, scheduledAt);
-
-    summaries.push({
-      id: issue.id,
-      category: issue.category,
-      publishDate: issue.publishDate.toISOString(),
-      deliveriesCreated: queueResult.deliveriesCreated,
-      subscribersMatched: queueResult.subscribersMatched,
-    });
-  }
+        return {
+          id: issue.id,
+          category: issue.category,
+          publishDate: issue.publishDate.toISOString(),
+          deliveriesCreated: queueResult.deliveriesCreated,
+          subscribersMatched: queueResult.subscribersMatched,
+        };
+      }),
+    ),
+  );
 
   return {
     inspected: backlogIssues.length,
