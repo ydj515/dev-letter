@@ -27,8 +27,23 @@ export async function POST(request: NextRequest) {
   }
 }
 
-function isAuthorized(request: NextRequest, secret: string) {
-  const header = request.headers.get("authorization");
-  if (!header) return false;
-  return header === `Bearer ${secret}`;
+import { timingSafeEqual } from "crypto";
+
+function isAuthorized(request: NextRequest, secret: string): boolean {
+  const authorization = request.headers.get("authorization");
+  if (!authorization || !authorization.startsWith("Bearer ")) {
+    return false;
+  }
+  const token = authorization.substring(7);
+
+  const secretBuffer = Buffer.from(secret);
+  const tokenBuffer = Buffer.from(token);
+
+  if (secretBuffer.length !== tokenBuffer.length) {
+    // To prevent leaking length information through timing, we still perform a dummy comparison.
+    timingSafeEqual(secretBuffer, secretBuffer);
+    return false;
+  }
+
+  return timingSafeEqual(secretBuffer, tokenBuffer);
 }
