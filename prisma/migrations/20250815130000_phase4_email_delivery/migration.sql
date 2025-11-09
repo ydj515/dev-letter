@@ -11,7 +11,7 @@ WHERE "unsubscribeToken" IS NULL;
 -- Enforce constraints
 ALTER TABLE "Subscriber"
   ALTER COLUMN "unsubscribeToken" SET NOT NULL,
-  ALTER COLUMN "unsubscribeToken" SET DEFAULT substr(md5(random()::text || clock_timestamp()::text), 1, 24);
+  ALTER COLUMN "unsubscribeToken" DROP DEFAULT;
 
 CREATE UNIQUE INDEX IF NOT EXISTS "Subscriber_unsubscribeToken_key"
   ON "Subscriber"("unsubscribeToken");
