@@ -10,7 +10,7 @@
     "lint:svg": "svglint \"public/**/*.svg\"",
     "analyze:subs": "node scripts/analyze-subscribers.mjs",
     "seed:newsletter": "node scripts/seed-newsletter.mjs",
-    "test:newsletter": "tsc -p tsconfig.test.json && node --test '.tmp/tests/tests/*.test.js'",
+    "test:newsletter": "tsc -p tsconfig.test.json && node --test \".tmp/tests/tests/*.test.js\"",
     "cron:send": "tsx scripts/cron-send.ts"
   },
   "dependencies": {
