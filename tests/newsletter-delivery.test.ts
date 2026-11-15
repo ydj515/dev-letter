@@ -16,6 +16,7 @@ class MemoryPrisma {
   issue: NewsletterIssue;
   deliveries: IssueDeliveryRecord[];
   subscribers: Subscriber[];
+  metrics: Record<string, unknown> | undefined;
 
   constructor(
     issue: NewsletterIssue,
@@ -28,6 +29,15 @@ class MemoryPrisma {
   }
 
   issueDelivery = {
+    groupBy: async (args: { where: { issueId: string } }) => {
+      const counts = new Map<DeliveryStatus, number>();
+      for (const delivery of this.deliveries) {
+        if (delivery.issueId === args.where.issueId) {
+          counts.set(delivery.status, (counts.get(delivery.status) ?? 0) + 1);
+        }
+      }
+      return [...counts].map(([status, count]) => ({ status, _count: { _all: count } }));
+    },
     findMany: async (args: any) => {
       const where = args?.where ?? {};
       const take = args?.take as number | undefined;
@@ -58,6 +68,13 @@ class MemoryPrisma {
           (!where.issueId || delivery.issueId === where.issueId) &&
           (!where.status || delivery.status === where.status),
       ).length;
+    },
+  };
+
+  issueMetric = {
+    upsert: async (args: { create: Record<string, unknown>; update: Record<string, unknown> }) => {
+      this.metrics = this.metrics ? { ...this.metrics, ...args.update } : args.create;
+      return this.metrics;
     },
   };
 
@@ -182,6 +199,8 @@ test("sends pending deliveries and marks success", async () => {
   assert.equal(result.sent, 1);
   assert.equal(result.failed, 0);
   assert.equal(prisma.deliveries[0].status, DeliveryStatus.SENT);
+  assert.equal(result.metrics?.sentCount, 1);
+  assert.equal(result.metrics?.successRate, 1);
   assert.equal(
     prisma.subscribers[0].lastSentAt?.toISOString(),
     prisma.issue.publishDate.toISOString(),
@@ -205,6 +224,8 @@ test("retries before marking deliveries as failed", async () => {
   assert.equal(result.failed, 1);
   assert.equal(result.requeued, 1);
   assert.equal(prisma.deliveries[0].status, DeliveryStatus.FAILED);
+  assert.equal(result.metrics?.failedCount, 1);
+  assert.equal(result.metrics?.successRate, 0);
 });
 
 test("skips recipients who already unsubscribed", async () => {

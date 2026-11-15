@@ -1,0 +1,25 @@
+name: Node Validation
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      DATABASE_URL: postgresql://fixture:fixture@127.0.0.1:1/fixture
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: jdx/mise-action@v4
+        with:
+          version: '2026.9.18'
+          install_args: node
+      - run: npm ci
+      - run: npm exec -- prisma generate
+      - run: npm run test:newsletter
+      - run: npm run build
+      - run: npm audit --audit-level=low
